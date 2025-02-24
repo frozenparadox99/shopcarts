@@ -44,3 +44,46 @@ def index():
 ######################################################################
 
 # Todo: Place your REST API code here ...
+
+
+@app.route("/shopcart/<int:user_id>", methods=["POST"])
+def add_to_or_create_cart(user_id):
+    """Add an item to a user's cart or update quantity if it already exists."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Missing JSON payload"}), status.HTTP_400_BAD_REQUEST
+
+    try:
+        item_id = int(data["item_id"])
+        description = str(data["description"])
+        price = float(data["price"])
+        quantity = int(data.get("quantity", 1))
+    except (KeyError, ValueError, TypeError) as e:
+        return jsonify({"error": f"Invalid input: {e}"}), status.HTTP_400_BAD_REQUEST
+
+    # Check if this item is already in the user's cart
+    cart_item = Shopcart.find(user_id, item_id)
+    if cart_item:
+        # Update the existing item's quantity
+        cart_item.quantity += quantity
+        try:
+            cart_item.update()
+        except Exception as e:
+            return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
+    else:
+        # Create a new cart entry
+        new_item = Shopcart(
+            user_id=user_id,
+            item_id=item_id,
+            description=description,
+            quantity=quantity,
+            price=price
+        )
+        try:
+            new_item.create()
+        except Exception as e:
+            return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
+
+    # Return the updated cart for the user
+    cart = [item.serialize() for item in Shopcart.find_by_user_id(user_id)]
+    return jsonify(cart), status.HTTP_200_OK
