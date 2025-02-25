@@ -126,6 +126,10 @@ class TestShopcartService(TestCase):
             shopcarts.append(shopcart)
         return shopcarts
 
+    ######################################################################
+    #  T E S T   C A S E S
+    ######################################################################
+
     def test_add_item_creates_new_cart_entry(self):
         """It should create a new cart entry when none exists for the user."""
         user_id = 1
