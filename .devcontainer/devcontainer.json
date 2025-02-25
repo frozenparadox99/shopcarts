@@ -14,7 +14,7 @@
 					"pytest",
 					"pipenv",
 					"tekton",
-					"testdb"			
+					"testdb",			
 					"creds",
 					"virtualenvs",
 					"shopcarts"
