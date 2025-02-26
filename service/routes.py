@@ -77,7 +77,7 @@ def add_to_or_create_cart(user_id):
             item_id=item_id,
             description=description,
             quantity=quantity,
-            price=price
+            price=price,
         )
         try:
             new_item.create()
@@ -87,3 +87,36 @@ def add_to_or_create_cart(user_id):
     # Return the updated cart for the user
     cart = [item.serialize() for item in Shopcart.find_by_user_id(user_id)]
     return jsonify(cart), status.HTTP_200_OK
+
+
+@app.route("/shopcarts", methods=["GET"])
+def list_shopcarts():
+    """List all shopcarts grouped by user"""
+    app.logger.info("Request to list shopcarts")
+
+    try:
+        # Initialize an empty list to store unique user shopcarts
+        shopcarts_list = []
+
+        # Get all shopcarts grouped by user_id
+        all_items = Shopcart.all()
+
+        # Group items by user_id
+        user_items = {}
+        for item in all_items:
+            if item.user_id not in user_items:
+                user_items[item.user_id] = []
+            user_items[item.user_id].append(item.serialize())
+
+        # Create the response list
+        for user_id, items in user_items.items():
+            shopcarts_list.append({"user_id": user_id, "items": items})
+
+        return jsonify(shopcarts_list), status.HTTP_200_OK
+
+    except Exception as e:
+        app.logger.error(f"Error listing shopcarts: {str(e)}")
+        return (
+            jsonify({"error": f"Internal server error: {str(e)}"}),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
