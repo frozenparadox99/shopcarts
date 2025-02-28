@@ -115,7 +115,7 @@ class TestShopcartService(TestCase):
         shopcarts = []
         for _ in range(count):
 
-            if user_id != None:
+            if user_id is not None:
                 shopcart = ShopcartFactory(user_id=user_id)
             else:
                 shopcart = ShopcartFactory()
