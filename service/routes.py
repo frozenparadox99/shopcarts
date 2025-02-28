@@ -120,3 +120,30 @@ def list_shopcarts():
             jsonify({"error": f"Internal server error: {str(e)}"}),
             status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@app.route("/shopcarts/<int:user_id>", methods=["GET"])
+def get_user_shopcart(user_id):
+    """Gets the shopcart for a specific user id"""
+    app.logger.info("Request to get shopcart for user_id: '%s'", user_id)
+
+    try:
+
+        user_items = Shopcart.find_by_user_id(user_id=user_id)
+        for i in user_items:
+            print(i.serialize())
+
+        if not user_items:
+            return jsonify([]), status.HTTP_404_NOT_FOUND
+
+        user_list = [{"user_id": user_id, "items": []}]
+        for item in user_items:
+            user_list[0]["items"].append(item.serialize())
+        return jsonify(user_list), status.HTTP_200_OK
+
+    except Exception as e:
+        app.logger.error(f"Error reading shopcart for user_id: '{user_id}'")
+        return (
+            jsonify({"error": f"Internal server error: {str(e)}"}),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
