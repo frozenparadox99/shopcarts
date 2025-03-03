@@ -134,6 +134,38 @@ class TestShopcartService(TestCase):
     #  T E S T   C A S E S
     ######################################################################
 
+    def test_root_endpoint(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.get_json()
+        self.assertIsNotNone(data)
+
+        self.assertEqual(data["name"], "Shopcart REST API Service")
+        self.assertEqual(data["version"], "1.0")
+
+        # Validate paths exist
+        expected_paths = {
+            "/shopcarts": {"POST": "Creates a new shopcart"},
+            "/shopcarts/{user_id}/items": {
+                "POST": "Adds a product to the shopcart",
+                "GET": "Lists all items in the shopcart (without metadata)",
+            },
+            "/shopcarts/{user_id}": {
+                "GET": "Retrieves the shopcart with metadata",
+                "PUT": "Updates the entire shopcart",
+                "DELETE": "Deletes the whole shopcart (all items)",
+            },
+            "/shopcarts/{user_id}/items/{item_id}": {
+                "GET": "Retrieves a specific item from the shopcart",
+                "PUT": "Updates a specific item in the shopcart",
+                "DELETE": "Removes an item from the shopcart",
+            },
+        }
+
+        self.assertIn("paths", data)
+        self.assertEqual(data["paths"], expected_paths)
+
     def test_add_item_creates_new_cart_entry(self):
         """It should create a new cart entry when none exists for the user."""
         user_id = 1

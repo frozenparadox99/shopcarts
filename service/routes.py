@@ -32,9 +32,31 @@ from service.common import status  # HTTP Status Codes
 ######################################################################
 @app.route("/")
 def index():
-    """Root URL response"""
+    """Root URL response with API metadata"""
+    app.logger.info("Request for Root URL")
+
     return (
-        "Reminder: return some useful information in json format about the service here",
+        jsonify(
+            name="Shopcart REST API Service",
+            version="1.0",
+            paths={
+                "/shopcarts": {"POST": "Creates a new shopcart"},
+                "/shopcarts/{user_id}/items": {
+                    "POST": "Adds a product to the shopcart",
+                    "GET": "Lists all items in the shopcart (without metadata)",
+                },
+                "/shopcarts/{user_id}": {
+                    "GET": "Retrieves the shopcart with metadata",
+                    "PUT": "Updates the entire shopcart",
+                    "DELETE": "Deletes the whole shopcart (all items)",
+                },
+                "/shopcarts/{user_id}/items/{item_id}": {
+                    "GET": "Retrieves a specific item from the shopcart",
+                    "PUT": "Updates a specific item in the shopcart",
+                    "DELETE": "Removes an item from the shopcart",
+                },
+            },
+        ),
         status.HTTP_200_OK,
     )
 
