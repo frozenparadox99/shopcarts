@@ -149,6 +149,29 @@ def get_user_shopcart(user_id):
         )
 
 
+@app.route("/shopcarts/<int:user_id>/items", methods=["GET"])
+def get_user_shopcart_items(user_id):
+    """Gets all items in a specific user's shopcart"""
+    app.logger.info("Request to get all items for user_id: '%s'", user_id)
+
+    try:
+        user_items = Shopcart.find_by_user_id(user_id=user_id)
+
+        if not user_items:
+            return jsonify([]), status.HTTP_404_NOT_FOUND
+
+        # Just return the serialized items directly as a list
+        items_list = [item.serialize() for item in user_items]
+        return jsonify(items_list), status.HTTP_200_OK
+
+    except Exception as e:
+        app.logger.error(f"Error reading items for user_id: '{user_id}'")
+        return (
+            jsonify({"error": f"Internal server error: {str(e)}"}),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
 @app.route("/shopcarts/<int:user_id>/items", methods=["POST"])
 def add_product_to_cart(user_id):
     """
