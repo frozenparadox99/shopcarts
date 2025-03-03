@@ -25,8 +25,8 @@ from flask import jsonify, request, url_for, abort
 from flask import current_app as app  # Import Flask application
 from service.models import Shopcart
 from service.common import status  # HTTP Status Codes
-
-
+import requests
+from .config import PRODUCT_SERVICE_URL
 ######################################################################
 # GET INDEX
 ######################################################################
@@ -147,3 +147,95 @@ def get_user_shopcart(user_id):
             jsonify({"error": f"Internal server error: {str(e)}"}),
             status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@app.route("/shopcarts/<int:user_id>/items", methods=["POST"])
+def add_product_to_cart(user_id):
+    """
+    Add a product to a user's shopping cart or update quantity if it already exists.
+    Retrieves product info (stock, purchase limit, etc.) from an external microservice.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Missing JSON payload"}), status.HTTP_400_BAD_REQUEST
+
+    try:
+        product_id = int(data["product_id"])
+        quantity = int(data.get("quantity", 1))
+    except (KeyError, ValueError, TypeError) as e:
+        return jsonify({"error": f"Invalid input: {e}"}), status.HTTP_400_BAD_REQUEST
+
+    product_data = fetch_product_info(product_id)
+    if product_data is None:
+        return jsonify({"error": "Product does not exist"}), status.HTTP_404_NOT_FOUND
+
+    if product_data["stock"] < 1:
+        return jsonify({"error": "Product is out of stock"}), status.HTTP_400_BAD_REQUEST
+
+    if quantity > product_data["stock"]:
+        return (
+            jsonify({"error": f"Only {product_data['stock']} units are available"}),
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    purchase_limit = product_data.get("purchase_limit")
+    if purchase_limit is not None and quantity > purchase_limit:
+        return (
+            jsonify({"error": f"Cannot exceed purchase limit of {purchase_limit}"}),
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    cart_item = Shopcart.find(user_id, product_id)
+    if cart_item:
+        new_quantity = cart_item.quantity + quantity
+        # Re-check stock and limit for the new total
+        if new_quantity > product_data["stock"]:
+            return (
+                jsonify({"error": f"Cannot exceed {product_data['stock']} units in stock"}),
+                status.HTTP_400_BAD_REQUEST,
+            )
+        if purchase_limit is not None and new_quantity > purchase_limit:
+            return (
+                jsonify({"error": f"Cannot exceed purchase limit of {purchase_limit}"}),
+                status.HTTP_400_BAD_REQUEST,
+            )
+        cart_item.quantity = new_quantity
+        try:
+            cart_item.update()
+        except Exception as e:
+            app.logger.error("Error updating cart item: %s", e)
+            return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
+    else:
+        # Create a new cart item
+        new_item = Shopcart(
+            user_id=user_id,
+            item_id=product_id,
+            description=product_data["name"], 
+            quantity=quantity,
+            price=product_data["price"], 
+        )
+        try:
+            new_item.create()
+        except Exception as e:
+            app.logger.error("Error creating cart item: %s", e)
+            return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
+
+    cart_items = Shopcart.find_by_user_id(user_id)
+    return jsonify([item.serialize() for item in cart_items]), status.HTTP_200_OK
+
+
+def fetch_product_info(product_id):
+    """
+    Retrieves product data from the external product microservice.
+    """
+    try:
+        # Example GET endpoint: /api/products/<product_id>
+        url = f"{PRODUCT_SERVICE_URL}/{product_id}"
+        response = requests.get(url, timeout=3)  # 3-second timeout
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()  # Expected to return the product data in JSON
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error calling product microservice: {e}")
+        return None

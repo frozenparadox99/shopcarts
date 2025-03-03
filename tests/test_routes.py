@@ -1,5 +1,6 @@
 ######################################################################
-# Copyright 2016, 2024 John J. Rofrano. All Rights Reserved.
+# Copyright 2016, 2024 John J.
+# Rofrano. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +28,6 @@ from wsgi import app
 from service.common import status
 from service.models import db, Shopcart
 from .factories import ShopcartFactory
-
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -69,7 +69,6 @@ class TestYourResourceService(TestCase):
     ######################################################################
     #  P L A C E   T E S T   C A S E S   H E R E
     ######################################################################
-
     def test_index(self):
         """It should call the home page"""
         resp = self.client.get("/")
@@ -109,12 +108,10 @@ class TestShopcartService(TestCase):
     ######################################################################
     #  H E L P E R   M E T H O D S
     ######################################################################
-
     def _populate_shopcarts(self, count=5, user_id=None):
         """Create and populate shopcarts in the database using ShopcartFactory"""
         shopcarts = []
         for _ in range(count):
-
             if user_id is not None:
                 shopcart = ShopcartFactory(user_id=user_id)
             else:
@@ -131,9 +128,8 @@ class TestShopcartService(TestCase):
         return shopcarts
 
     ######################################################################
-    #  T E S T   C A S E S
+    #  T E S T   C A S E S  (existing endpoints)
     ######################################################################
-
     def test_add_item_creates_new_cart_entry(self):
         """It should create a new cart entry when none exists for the user."""
         user_id = 1
@@ -203,24 +199,18 @@ class TestShopcartService(TestCase):
 
     def test_list_shopcarts(self):
         """It should list all shopcarts in the database"""
-
         # Create test data
         shopcarts = self._populate_shopcarts(20)
-
         # Get the list of all shopcarts
         resp = self.client.get("/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
-
         # Verify response structure
         self.assertIsInstance(data, list)
-
         # Verify each shopcart exists in the response
         user_ids = [cart["user_id"] for cart in data]
         for shopcart in shopcarts:
             self.assertIn(shopcart.user_id, user_ids)
-
-            # Find the corresponding cart in the response
             response_cart = next(
                 (cart for cart in data if cart["user_id"] == shopcart.user_id), None
             )
@@ -228,12 +218,8 @@ class TestShopcartService(TestCase):
                 response_cart,
                 f"Shopcart for user {shopcart.user_id} not found in response",
             )
-
-            # Verify the cart has items
             self.assertIn("items", response_cart)
             self.assertIsInstance(response_cart["items"], list)
-
-            # Find the matching item in the response items
             response_item = next(
                 (
                     item
@@ -242,21 +228,15 @@ class TestShopcartService(TestCase):
                 ),
                 None,
             )
-
-            # Verify the item exists and has correct data
             self.assertIsNotNone(
                 response_item,
                 f"Item {shopcart.item_id} for user {shopcart.user_id} not found in response",
             )
-
-            # Check all relevant fields match
             self.assertEqual(response_item["user_id"], shopcart.user_id)
             self.assertEqual(response_item["item_id"], shopcart.item_id)
             self.assertEqual(response_item["description"], shopcart.description)
             self.assertEqual(response_item["quantity"], shopcart.quantity)
             self.assertAlmostEqual(float(response_item["price"]), float(shopcart.price))
-
-            # Verify the response contains timestamps
             self.assertIn("created_at", response_item)
             self.assertIn("last_updated", response_item)
 
@@ -271,22 +251,13 @@ class TestShopcartService(TestCase):
         """It should handle server errors gracefully"""
         # Create some test data to make sure the database is working initially
         self._populate_shopcarts(1)
-
-        # Mock the database query to raise an exception with a specific message
-        with patch(
-            "service.models.Shopcart.all", side_effect=Exception("Database error")
-        ):
+        # Mock the database query to raise an exception
+        with patch("service.models.Shopcart.all", side_effect=Exception("Database error")):
             resp = self.client.get("/shopcarts")
-
-            # Verify the status code is 500 (Internal Server Error)
             self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            # Verify the response contains an error message with the exact format
             data = resp.get_json()
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Internal server error: Database error")
-
-            # Additional check to verify the format matches the implementation
             expected_error = "Internal server error: Database error"
             self.assertEqual(data["error"], expected_error)
 
@@ -294,21 +265,15 @@ class TestShopcartService(TestCase):
         """It should get the shopcarts"""
         shopcart_user_1 = self._populate_shopcarts(count=3, user_id=1)
         shopcart_user_2 = self._populate_shopcarts(count=1, user_id=2)
-
-        # Get the list of all shopcarts
         resp = self.client.get("/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
-
-        # Verify response structure
         self.assertIsInstance(data, list)
         expanded_data = []
-        for shopcart in data:
-            for item in shopcart["items"]:
+        for cart in data:
+            for item in cart["items"]:
                 expanded_data.append(item)
         self.assertEqual(len(expanded_data), 4)
-
-        # Verify that both user_id 1 and 2 were created in the shopcart
         user_ids = set([cart["user_id"] for cart in data])
         self.assertEqual(user_ids, {1, 2})
 
@@ -316,15 +281,11 @@ class TestShopcartService(TestCase):
         resp = self.client.get("/shopcarts/1")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         user_data = resp.get_json()
-
-        # Verify that user_data only grabbed shopcarts for user_id 1
         self.assertIsInstance(user_data, list)
         self.assertEqual(set([cart["user_id"] for cart in user_data]), {1})
         self.assertEqual(len(user_data), 1)
         self.assertEqual(len(user_data[0]["items"]), 3)
-        print(user_data)
         for shopcart in shopcart_user_1:
-            print(shopcart)
             response_item = next(
                 (
                     item
@@ -334,36 +295,26 @@ class TestShopcartService(TestCase):
                 ),
                 None,
             )
-
-            # Ensure the item exists in the response
             self.assertIsNotNone(
                 response_item,
                 f"Item {shopcart.item_id} for user {shopcart.user_id} not found in response",
             )
-
-            # Validate the details of the item match
             self.assertEqual(response_item["user_id"], shopcart.user_id)
             self.assertEqual(response_item["item_id"], shopcart.item_id)
             self.assertEqual(response_item["description"], shopcart.description)
             self.assertEqual(response_item["quantity"], shopcart.quantity)
             self.assertAlmostEqual(float(response_item["price"]), float(shopcart.price))
-
-            # Ensure timestamps exist
             self.assertIn("created_at", response_item)
             self.assertIn("last_updated", response_item)
 
         # Validate for user 2
-
         resp = self.client.get("/shopcarts/2")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         user_data_2 = resp.get_json()
-
-        # Verify user_data only has shopcarts for user_id 2
         self.assertIsInstance(user_data_2, list)
         self.assertEqual(set([cart["user_id"] for cart in user_data_2]), {2})
         self.assertEqual(len(user_data_2), 1)
         self.assertEqual(len(user_data_2[0]["items"]), 1)
-
         for shopcart in shopcart_user_2:
             response_item = next(
                 (
@@ -374,21 +325,15 @@ class TestShopcartService(TestCase):
                 ),
                 None,
             )
-
-            # Ensure the item exists in the response
             self.assertIsNotNone(
                 response_item,
                 f"Item {shopcart.item_id} for user {shopcart.user_id} not found in response",
             )
-
-            # Validate the details of the item match
             self.assertEqual(response_item["user_id"], shopcart.user_id)
             self.assertEqual(response_item["item_id"], shopcart.item_id)
             self.assertEqual(response_item["description"], shopcart.description)
             self.assertEqual(response_item["quantity"], shopcart.quantity)
             self.assertAlmostEqual(float(response_item["price"]), float(shopcart.price))
-
-            # Ensure timestamps exist
             self.assertIn("created_at", response_item)
             self.assertIn("last_updated", response_item)
 
@@ -398,16 +343,12 @@ class TestShopcartService(TestCase):
         resp = self.client.get("/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
-
-        # Verify response structure
         self.assertIsInstance(data, list)
         expanded_data = []
-        for shopcart in data:
-            for item in shopcart["items"]:
+        for cart in data:
+            for item in cart["items"]:
                 expanded_data.append(item)
         self.assertEqual(len(expanded_data), 3)
-
-        # Verify that both user_id 1 and 2 were created in the shopcart
         user_ids = set([cart["user_id"] for cart in data])
         self.assertEqual(user_ids, {1})
 
@@ -415,30 +356,159 @@ class TestShopcartService(TestCase):
         resp = self.client.get("/shopcarts/2")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
         user_data = resp.get_json()
-
-        # Verify that we get an empty list for user_id = 2
         self.assertEqual(user_data, [])
 
     def test_read_user_shopcart_server_error(self):
         """Read by user_id should handle server errors gracefully"""
-        # Create some test data to make sure the database is working initially
         self._populate_shopcarts(count=1, user_id=1)
-
-        # Mock the database query to raise an exception with a specific message
         with patch(
             "service.models.Shopcart.find_by_user_id",
             side_effect=Exception("Database error"),
         ):
             resp = self.client.get("/shopcarts/1")
-
-            # Verify the status code is 500 (Internal Server Error)
             self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            # Verify the response contains an error message with the exact format
             data = resp.get_json()
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Internal server error: Database error")
-
-            # Additional check to verify the format matches the implementation
             expected_error = "Internal server error: Database error"
             self.assertEqual(data["error"], expected_error)
+
+    ######################################################################
+    #  N E W   T E S T S   F O R   /shopcarts/<int:user_id>/items
+    ######################################################################
+    def _mock_product(
+        self,
+        product_id=111,
+        name="Test Product",
+        stock=10,
+        purchase_limit=None,
+        price=9.99,
+    ):
+        """Returns a dictionary simulating product data from a product microservice."""
+        return {
+            "id": product_id,
+            "name": name,
+            "stock": stock,
+            "purchase_limit": purchase_limit,
+            "price": price,
+        }
+
+    @patch("service.routes.fetch_product_info")
+    def test_add_product_to_empty_cart(self, mock_fetch):
+        """It should add a product to an empty cart if the product is valid."""
+        user_id = 1
+        # Mock product info with sufficient stock
+        mock_fetch.return_value = self._mock_product(product_id=111, stock=10)
+
+        payload = {"product_id": 111, "quantity": 2}
+        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.get_json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["user_id"], user_id)
+        self.assertEqual(data[0]["item_id"], 111)
+        self.assertEqual(data[0]["quantity"], 2)
+        self.assertAlmostEqual(data[0]["price"], 9.99, places=2)
+
+    @patch("service.routes.fetch_product_info")
+    def test_add_existing_product_updates_quantity_microservice(self, mock_fetch):
+        """It should update quantity if the product is already in the cart."""
+        user_id = 1
+        mock_fetch.return_value = self._mock_product(product_id=111, stock=10)
+
+        # Add item the first time
+        payload1 = {"product_id": 111, "quantity": 2}
+        resp1 = self.client.post(f"/shopcarts/{user_id}/items", json=payload1)
+        self.assertEqual(resp1.status_code, status.HTTP_200_OK)
+
+        # Add the same product again
+        payload2 = {"product_id": 111, "quantity": 3}
+        resp2 = self.client.post(f"/shopcarts/{user_id}/items", json=payload2)
+        self.assertEqual(resp2.status_code, status.HTTP_200_OK)
+
+        data = resp2.get_json()
+        # The total quantity should now be 2 + 3 = 5
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["quantity"], 5)
+
+    @patch("service.routes.fetch_product_info")
+    def test_add_different_products_microservice(self, mock_fetch):
+        """It should add multiple distinct products to the same cart."""
+        user_id = 1
+
+        # First product
+        mock_fetch.return_value = self._mock_product(product_id=111, stock=10)
+        resp1 = self.client.post(
+            f"/shopcarts/{user_id}/items", json={"product_id": 111, "quantity": 2}
+        )
+        self.assertEqual(resp1.status_code, status.HTTP_200_OK)
+
+        # Second product
+        mock_fetch.return_value = self._mock_product(product_id=222, stock=5)
+        resp2 = self.client.post(
+            f"/shopcarts/{user_id}/items", json={"product_id": 222, "quantity": 1}
+        )
+        self.assertEqual(resp2.status_code, status.HTTP_200_OK)
+
+        data = resp2.get_json()
+        self.assertEqual(len(data), 2)
+        item_ids = [item["item_id"] for item in data]
+        self.assertIn(111, item_ids)
+        self.assertIn(222, item_ids)
+
+    @patch("service.routes.fetch_product_info")
+    def test_add_nonexistent_product_microservice(self, mock_fetch):
+        """It should return 404 if the product does not exist."""
+        user_id = 1
+        mock_fetch.return_value = None  # Simulate nonexistent product
+
+        payload = {"product_id": 999, "quantity": 1}
+        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        data = response.get_json()
+        self.assertIn("error", data)
+        self.assertEqual(data["error"], "Product does not exist")
+
+    @patch("service.routes.fetch_product_info")
+    def test_add_exceeds_stock_microservice(self, mock_fetch):
+        """It should return a 400 error if quantity exceeds available stock."""
+        user_id = 1
+        mock_fetch.return_value = self._mock_product(stock=5)
+
+        payload = {"product_id": 111, "quantity": 6}
+        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data = response.get_json()
+        self.assertIn("error", data)
+        self.assertIn("Only 5 units are available", data["error"])
+
+    @patch("service.routes.fetch_product_info")
+    def test_add_exceeds_purchase_limit_microservice(self, mock_fetch):
+        """It should return a 400 error if quantity exceeds the product's purchase limit."""
+        user_id = 1
+        mock_fetch.return_value = self._mock_product(stock=10, purchase_limit=3)
+
+        payload = {"product_id": 111, "quantity": 4}
+        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data = response.get_json()
+        self.assertIn("error", data)
+        self.assertIn("Cannot exceed purchase limit of 3", data["error"])
+
+    @patch("service.routes.fetch_product_info")
+    def test_add_out_of_stock_microservice(self, mock_fetch):
+        """It should return a 400 error if the product is out of stock."""
+        user_id = 1
+        mock_fetch.return_value = self._mock_product(stock=0)
+
+        payload = {"product_id": 111, "quantity": 1}
+        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data = response.get_json()
+        self.assertIn("error", data)
+        self.assertEqual(data["error"], "Product is out of stock")
