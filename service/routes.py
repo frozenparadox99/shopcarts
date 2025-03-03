@@ -172,25 +172,17 @@ def get_user_shopcart_items(user_id):
         )
 
 
-@app.route("/shopcarts/<int:user_id>/items/<int:item_id>", methods=["PUT"])
+@app.route("/shopcart/<int:user_id>/items/<int:item_id>", methods=["PUT"])
 def update_cart_item(user_id, item_id):
-    """Updating a specific item in a shopcart"""
+    """Update a specific item in a user's shopping cart."""
     data = request.get_json()
-    if not data:
-        return jsonify({"error": "Missing JSON payload"}), status.HTTP_400_BAD_REQUEST
-
-    try:
-        quantity = int(data.get("quantity"))
-    except (ValueError, TypeError) as e:
-        return jsonify({"error": f"Invalid input: {e}"}), status.HTTP_400_BAD_REQUEST
-
+    quantity = int(data.get("quantity"))
     if quantity < 0:
         return (
             jsonify({"error": "Quantity cannot be negative"}),
             status.HTTP_400_BAD_REQUEST,
         )
 
-    # Check if the item exists
     cart_item = Shopcart.find(user_id, item_id)
     if not cart_item:
         return (
@@ -199,22 +191,12 @@ def update_cart_item(user_id, item_id):
         )
 
     if quantity == 0:
-        # Remove item if quantity set to 0
-        try:
-            cart_item.delete()
-        except Exception as e:
-            return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
+        cart_item.delete()
         return (
             jsonify({"message": f"Item {item_id} removed from cart"}),
             status.HTTP_200_OK,
         )
-    else:
-        # Update the item's quantity
-        cart_item.quantity = quantity
-        try:
-            cart_item.update()
-        except Exception as e:
-            return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
 
-    # Return the updated item details
+    cart_item.quantity = quantity
+    cart_item.update()
     return jsonify(cart_item.serialize()), status.HTTP_200_OK
