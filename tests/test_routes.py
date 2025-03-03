@@ -354,9 +354,9 @@ class TestShopcartService(TestCase):
         self.assertEqual(set([cart["user_id"] for cart in user_data]), {1})
         self.assertEqual(len(user_data), 1)
         self.assertEqual(len(user_data[0]["items"]), 3)
-        print(user_data)
+
         for shopcart in shopcart_user_1:
-            print(shopcart)
+
             response_item = next(
                 (
                     item
