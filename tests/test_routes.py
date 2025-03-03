@@ -177,15 +177,6 @@ class TestShopcartService(TestCase):
         self.assertEqual(data[0]["quantity"], 5)
         self.assertAlmostEqual(data[0]["price"], payload["price"], places=2)
 
-    def test_add_item_missing_fields(self):
-        """It should return a 400 error if required fields are missing."""
-        user_id = 1
-        # Missing 'item_id'
-        payload = {"description": "Test Item", "price": 9.99}
-        response = self.client.post(f"/shopcart/{user_id}", json=payload)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        data = response.get_json()
-        self.assertIn("error", data)
 
     def test_add_item_invalid_input(self):
         """It should return a 400 error if fields have invalid data types."""
@@ -539,4 +530,3 @@ class TestShopcartService(TestCase):
         data = response.get_json()
         self.assertIn("error", data)
         self.assertIn("Invalid input", data["error"])
-

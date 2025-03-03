@@ -48,6 +48,7 @@ class ShopcartFactory(factory.Factory):
             user_id=provided_user_id
         )
 
+
 def mock_product(
     product_id=111,
     name="Test Product",

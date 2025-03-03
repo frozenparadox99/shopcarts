@@ -21,12 +21,10 @@ This service implements a REST API that allows you to Create, Read, Update
 and Delete YourResourceModel
 """
 
-from flask import jsonify, request, url_for, abort
+from flask import jsonify, request
 from flask import current_app as app  # Import Flask application
 from service.models import Shopcart
 from service.common import status  # HTTP Status Codes
-import requests
-from .config import PRODUCT_SERVICE_URL
 ######################################################################
 # GET INDEX
 ######################################################################
