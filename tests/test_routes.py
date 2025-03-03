@@ -27,7 +27,7 @@ from unittest.mock import patch
 from wsgi import app
 from service.common import status
 from service.models import db, Shopcart
-from .factories import ShopcartFactory
+from .factories import ShopcartFactory, mock_product
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -438,32 +438,16 @@ class TestShopcartService(TestCase):
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Internal server error: Database error")
 
+
     ######################################################################
     #  N E W   T E S T S   F O R   /shopcarts/<int:user_id>/items
     ######################################################################
-    def _mock_product(
-        self,
-        product_id=111,
-        name="Test Product",
-        stock=10,
-        purchase_limit=None,
-        price=9.99,
-    ):
-        """Returns a dictionary simulating product data from a product microservice."""
-        return {
-            "id": product_id,
-            "name": name,
-            "stock": stock,
-            "purchase_limit": purchase_limit,
-            "price": price,
-        }
 
     @patch("service.routes.fetch_product_info")
     def test_add_product_to_empty_cart(self, mock_fetch):
         """It should add a product to an empty cart if the product is valid."""
         user_id = 1
-        # Mock product info with sufficient stock
-        mock_fetch.return_value = self._mock_product(product_id=111, stock=10)
+        mock_fetch.return_value = mock_product(product_id=111, stock=10)
 
         payload = {"product_id": 111, "quantity": 2}
         response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
@@ -477,53 +461,42 @@ class TestShopcartService(TestCase):
         self.assertAlmostEqual(data[0]["price"], 9.99, places=2)
 
     @patch("service.routes.fetch_product_info")
-    def test_add_existing_product_updates_quantity_microservice(self, mock_fetch):
+    def test_add_existing_product_updates_quantity(self, mock_fetch):
         """It should update quantity if the product is already in the cart."""
         user_id = 1
-        mock_fetch.return_value = self._mock_product(product_id=111, stock=10)
+        mock_fetch.return_value = mock_product(product_id=111, stock=10)
 
-        # Add item the first time
         payload1 = {"product_id": 111, "quantity": 2}
-        resp1 = self.client.post(f"/shopcarts/{user_id}/items", json=payload1)
-        self.assertEqual(resp1.status_code, status.HTTP_200_OK)
+        self.client.post(f"/shopcarts/{user_id}/items", json=payload1)
 
-        # Add the same product again
         payload2 = {"product_id": 111, "quantity": 3}
-        resp2 = self.client.post(f"/shopcarts/{user_id}/items", json=payload2)
-        self.assertEqual(resp2.status_code, status.HTTP_200_OK)
+        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload2)
 
-        data = resp2.get_json()
-        # The total quantity should now be 2 + 3 = 5
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["quantity"], 5)
 
     @patch("service.routes.fetch_product_info")
-    def test_add_different_products_microservice(self, mock_fetch):
+    def test_add_different_products(self, mock_fetch):
         """It should add multiple distinct products to the same cart."""
         user_id = 1
 
-        # First product
-        mock_fetch.return_value = self._mock_product(product_id=111, stock=10)
-        resp1 = self.client.post(
-            f"/shopcarts/{user_id}/items", json={"product_id": 111, "quantity": 2}
-        )
-        self.assertEqual(resp1.status_code, status.HTTP_200_OK)
+        mock_fetch.return_value = mock_product(product_id=111, stock=10)
+        self.client.post(f"/shopcarts/{user_id}/items", json={"product_id": 111, "quantity": 2})
 
-        # Second product
-        mock_fetch.return_value = self._mock_product(product_id=222, stock=5)
-        resp2 = self.client.post(
-            f"/shopcarts/{user_id}/items", json={"product_id": 222, "quantity": 1}
-        )
-        self.assertEqual(resp2.status_code, status.HTTP_200_OK)
+        mock_fetch.return_value = mock_product(product_id=222, stock=5)
+        response = self.client.post(f"/shopcarts/{user_id}/items", json={"product_id": 222, "quantity": 1})
 
-        data = resp2.get_json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
         self.assertEqual(len(data), 2)
         item_ids = [item["item_id"] for item in data]
         self.assertIn(111, item_ids)
         self.assertIn(222, item_ids)
 
     @patch("service.routes.fetch_product_info")
-    def test_add_nonexistent_product_microservice(self, mock_fetch):
+    def test_add_nonexistent_product(self, mock_fetch):
         """It should return 404 if the product does not exist."""
         user_id = 1
         mock_fetch.return_value = None  # Simulate nonexistent product
@@ -537,10 +510,10 @@ class TestShopcartService(TestCase):
         self.assertEqual(data["error"], "Product does not exist")
 
     @patch("service.routes.fetch_product_info")
-    def test_add_exceeds_stock_microservice(self, mock_fetch):
+    def test_add_exceeds_stock(self, mock_fetch):
         """It should return a 400 error if quantity exceeds available stock."""
         user_id = 1
-        mock_fetch.return_value = self._mock_product(stock=5)
+        mock_fetch.return_value = mock_product(stock=5)
 
         payload = {"product_id": 111, "quantity": 6}
         response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
@@ -551,10 +524,10 @@ class TestShopcartService(TestCase):
         self.assertIn("Only 5 units are available", data["error"])
 
     @patch("service.routes.fetch_product_info")
-    def test_add_exceeds_purchase_limit_microservice(self, mock_fetch):
+    def test_add_exceeds_purchase_limit(self, mock_fetch):
         """It should return a 400 error if quantity exceeds the product's purchase limit."""
         user_id = 1
-        mock_fetch.return_value = self._mock_product(stock=10, purchase_limit=3)
+        mock_fetch.return_value = mock_product(stock=10, purchase_limit=3)
 
         payload = {"product_id": 111, "quantity": 4}
         response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
@@ -565,10 +538,10 @@ class TestShopcartService(TestCase):
         self.assertIn("Cannot exceed purchase limit of 3", data["error"])
 
     @patch("service.routes.fetch_product_info")
-    def test_add_out_of_stock_microservice(self, mock_fetch):
+    def test_add_out_of_stock(self, mock_fetch):
         """It should return a 400 error if the product is out of stock."""
         user_id = 1
-        mock_fetch.return_value = self._mock_product(stock=0)
+        mock_fetch.return_value = mock_product(stock=0)
 
         payload = {"product_id": 111, "quantity": 1}
         response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
