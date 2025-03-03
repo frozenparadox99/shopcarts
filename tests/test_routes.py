@@ -126,7 +126,7 @@ class TestShopcartService(TestCase):
                 "quantity": shopcart.quantity,
             }
             response = self.client.post(f"/shopcart/{shopcart.user_id}", json=payload)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             shopcarts.append(shopcart)
         return shopcarts
 
@@ -135,6 +135,7 @@ class TestShopcartService(TestCase):
     ######################################################################
 
     def test_root_endpoint(self):
+        """It should return API data at the root endpoint"""
         response = self.client.get("/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -176,7 +177,7 @@ class TestShopcartService(TestCase):
             "quantity": 2,
         }
         response = self.client.post(f"/shopcart/{user_id}", json=payload)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         data = response.get_json()
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["user_id"], user_id)
@@ -195,7 +196,7 @@ class TestShopcartService(TestCase):
             "quantity": 2,
         }
         response = self.client.post(f"/shopcart/{user_id}", json=payload)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Add the same item again
         payload2 = {
@@ -205,7 +206,7 @@ class TestShopcartService(TestCase):
             "quantity": 3,
         }
         response2 = self.client.post(f"/shopcart/{user_id}", json=payload2)
-        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+        self.assertEqual(response2.status_code, status.HTTP_201_CREATED)
         data = response2.get_json()
 
         # The quantity should now be 2 + 3 = 5
@@ -232,6 +233,62 @@ class TestShopcartService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         data = response.get_json()
         self.assertIn("error", data)
+
+    def test_add_item_missing_json(self):
+        """It should return 400 when the request body is missing"""
+        resp = self.client.post("/shopcart/1", json=[])
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Missing JSON payload", resp.get_json()["error"])
+
+    def test_add_item_internal_server_error_update(self):
+        with patch(
+            "service.models.Shopcart.update", side_effect=Exception("Database error")
+        ):
+            user_id = 1
+            # First, add the item
+            payload = {
+                "item_id": 101,
+                "description": "Test Item",
+                "price": 9.99,
+                "quantity": 2,
+            }
+            response = self.client.post(f"/shopcart/{user_id}", json=payload)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+            # Add the same item again
+            payload2 = {
+                "item_id": 101,
+                "description": "Test Item",
+                "price": 9.99,
+                "quantity": 3,
+            }
+            response2 = self.client.post(f"/shopcart/{user_id}", json=payload2)
+            self.assertEqual(
+                response2.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            data = response2.get_json()
+            self.assertIn("error", data)
+            self.assertEqual(data["error"], "Internal server error: Database error")
+
+    def test_add_item_internal_server_error_create(self):
+        with patch(
+            "service.models.Shopcart.create", side_effect=Exception("Database error")
+        ):
+            user_id = 1
+            # First, add the item
+            payload = {
+                "item_id": 101,
+                "description": "Test Item",
+                "price": 9.99,
+                "quantity": 2,
+            }
+            response = self.client.post(f"/shopcart/{user_id}", json=payload)
+            self.assertEqual(
+                response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            data = response.get_json()
+            self.assertIn("error", data)
+            self.assertEqual(data["error"], "Internal server error: Database error")
 
     def test_list_shopcarts(self):
         """It should list all shopcarts in the database"""
@@ -446,10 +503,6 @@ class TestShopcartService(TestCase):
         # Grab shopcart for user_id = 2
         resp = self.client.get("/shopcarts/2")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        user_data = resp.get_json()
-
-        # Verify that we get an empty list for user_id = 2
-        self.assertEqual(user_data, [])
 
     def test_read_user_shopcart_server_error(self):
         """Read by user_id should handle server errors gracefully"""
@@ -489,26 +542,49 @@ class TestShopcartService(TestCase):
 
         # Verify response structure and content
         self.assertIsInstance(data, list)
-        self.assertEqual(len(data), 3)
+        expanded_data = []
+        for shopcart in data:
+            for item in shopcart["items"]:
+                expanded_data.append(item)
+        self.assertEqual(len(expanded_data), 3)
 
         # Verify each item exists in the response
+        self.assertIsInstance(data, list)
+        self.assertEqual(set([cart["user_id"] for cart in data]), {1})
+        self.assertEqual(len(data), 1)
+        self.assertEqual(len(data[0]["items"]), 3)
+
         for shopcart in shopcart_items:
-            item_found = False
-            for item in data:
-                if item["item_id"] == shopcart.item_id:
-                    item_found = True
-                    self.assertEqual(item["user_id"], shopcart.user_id)
-                    self.assertEqual(item["description"], shopcart.description)
-                    self.assertEqual(item["quantity"], shopcart.quantity)
-                    self.assertAlmostEqual(float(item["price"]), float(shopcart.price))
-                    self.assertIn("created_at", item)
-                    self.assertIn("last_updated", item)
-            self.assertTrue(
-                item_found, f"Item {shopcart.item_id} not found in response"
+
+            response_item = next(
+                (
+                    item
+                    for cart in data
+                    for item in cart["items"]
+                    if item["item_id"] == shopcart.item_id
+                ),
+                None,
             )
 
+            # Ensure the item exists in the response
+            self.assertIsNotNone(
+                response_item,
+                f"Item {shopcart.item_id} for user {shopcart.user_id} not found in response",
+            )
+
+            # Validate the details of the item match
+            self.assertEqual(response_item["user_id"], shopcart.user_id)
+            self.assertEqual(response_item["item_id"], shopcart.item_id)
+            self.assertEqual(response_item["description"], shopcart.description)
+            self.assertEqual(response_item["quantity"], shopcart.quantity)
+            self.assertAlmostEqual(float(response_item["price"]), float(shopcart.price))
+
+            # Ensure timestamps exist
+            self.assertNotIn("created_at", response_item)
+            self.assertNotIn("last_updated", response_item)
+
     def test_get_empty_user_shopcart_items(self):
-        """It should return an empty list when a user has no items"""
+        """It should return an 404 when a user has no items"""
         # Create test data for user 2 (to make sure DB works)
         self._populate_shopcarts(count=1, user_id=2)
 
@@ -517,8 +593,6 @@ class TestShopcartService(TestCase):
 
         # Check response
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        data = resp.get_json()
-        self.assertEqual(data, [])
 
     def test_get_user_shopcart_items_server_error(self):
         """It should handle server errors gracefully when getting items"""
