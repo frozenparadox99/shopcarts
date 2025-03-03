@@ -54,12 +54,13 @@ def mock_product(
     stock=10,
     purchase_limit=None,
     price=9.99,
+    quantity=1,
 ):
-    """Returns a dictionary simulating product data from a product microservice."""
     return {
-        "id": product_id,
+        "product_id": product_id,
         "name": name,
         "stock": stock,
         "purchase_limit": purchase_limit,
         "price": price,
+        "quantity": quantity,
     }
