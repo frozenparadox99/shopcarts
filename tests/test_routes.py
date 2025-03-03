@@ -507,3 +507,74 @@ class TestShopcartService(TestCase):
             data = resp.get_json()
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Internal server error: Database error")
+
+    def test_update_cart_item_success(self):
+        """It should update a specific item in a user's shopcart"""
+        user_id = 1
+        # Pre-populate the cart with one item using the helper method
+        shopcarts = self._populate_shopcarts(count=1, user_id=user_id)
+        item_id = shopcarts[0].item_id
+
+        update_item = {"quantity": 4}
+        response = self.client.put(
+            f"/shopcart/{user_id}/items/{item_id}", json=update_item
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(data["quantity"], 5)
+        self.assertEqual(data["item_id"], item_id)
+        self.assertEqual(data["user_id"], user_id)
+
+    def test_update_cart_item_remove(self):
+        """It should remove the item if the quantity is set to 0"""
+        user_id = 1
+        # Pre-populate the cart with one item.
+        shopcarts = self._populate_shopcarts(count=1, user_id=user_id)
+        item_id = shopcarts[0].item_id
+
+        update_item = {"quantity": 0}
+        response = self.client.put(
+            f"/shopcart/{user_id}/items/{item_id}", json=update_item
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        # Confirm that item was removed
+        self.assertIn("message", data)
+        self.assertEqual(data["message"], f"Item {item_id} removed from cart")
+
+    def test_update_cart_item_not_found(self):
+        """It should return a 404 error if the item does not exist in the user's shopcart"""
+        user_id = 1
+        # Ensure there is at least one item in the cart so the cart exists.
+        self._populate_shopcarts(count=1, user_id=user_id)
+        item_id = 203
+        update_item = {"quantity": 3}
+        response = self.client.put(
+            f"/shopcart/{user_id}/items/{item_id}", json=update_item
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        data = response.get_json()
+        self.assertIn("error", data)
+
+    def test_update_cart_item_invalid_input(self):
+        """It should return a 400 error if the quantity is negative."""
+        user_id = 1
+        shopcarts = self._populate_shopcarts(count=1, user_id=user_id)
+        item_id = shopcarts[0].item_id
+        update_item = {"quantity": -1}
+        response = self.client.put(
+            f"/shopcart/{user_id}/items/{item_id}", json=update_item
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.get_json()
+        self.assertIn("error", data)
+
+    def test_update_cart_item_missing_payload(self):
+        """It should return a 400 error if no JSON is provided."""
+        user_id = 1
+        shopcarts = self._populate_shopcarts(count=1, user_id=user_id)
+        item_id = shopcarts[0].item_id
+        response = self.client.put(f"/shopcart/{user_id}/items/{item_id}")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.get_json()
+        self.assertIn("error", data)
