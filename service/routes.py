@@ -292,7 +292,7 @@ def add_product_to_cart(user_id):
             return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
 
     cart_items = Shopcart.find_by_user_id(user_id)
-    return jsonify([item.serialize() for item in cart_items]), status.HTTP_200_OK
+    return jsonify([item.serialize() for item in cart_items]), status.HTTP_201_CREATED
 
 
 @app.route("/shopcart/<int:user_id>/items/<int:item_id>", methods=["PUT"])

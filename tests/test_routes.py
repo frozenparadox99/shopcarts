@@ -757,7 +757,7 @@ class TestShopcartService(TestCase):
         user_id = 1
         payload = mock_product(product_id=111, stock=10, price=9.99, quantity=2)
         response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         data = response.get_json()
         self.assertEqual(len(data), 1)
@@ -776,7 +776,7 @@ class TestShopcartService(TestCase):
         # Add the same product again
         payload2 = mock_product(product_id=111, stock=10, quantity=3)
         response = self.client.post(f"/shopcarts/{user_id}/items", json=payload2)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         data = response.get_json()
         # Quantity should now be 2 + 3 = 5
@@ -793,7 +793,7 @@ class TestShopcartService(TestCase):
         # Add second product
         payload2 = mock_product(product_id=222, stock=5, quantity=1)
         response = self.client.post(f"/shopcarts/{user_id}/items", json=payload2)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         data = response.get_json()
         self.assertEqual(len(data), 2)
