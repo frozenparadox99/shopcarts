@@ -425,3 +425,32 @@ def get_cart_item(user_id, item_id):
             jsonify({"error": f"Internal server error: {str(e)}"}),
             status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@app.route("/shopcarts/<int:user_id>", methods=["DELETE"])
+def delete_shopcart(user_id):
+    """Delete an entire shopcart for a user"""
+    app.logger.info("Request to delete shopcart for user_id: %s", user_id)
+
+    try:
+        # Find all items for this user
+        user_items = Shopcart.find_by_user_id(user_id)
+
+        # Delete each item in the shopcart
+        for item in user_items:
+            app.logger.info(
+                "Deleting item %s from user %s's cart", item.item_id, user_id
+            )
+            item.delete()
+
+        app.logger.info("Shopcart for user %s deleted", user_id)
+        return {}, status.HTTP_204_NO_CONTENT
+
+    except Exception as e:
+        app.logger.error(
+            "Error deleting shopcart for user_id: %s - %s", user_id, str(e)
+        )
+        return (
+            jsonify({"error": f"Internal server error: {str(e)}"}),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
