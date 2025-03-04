@@ -15,10 +15,10 @@
 ######################################################################
 
 """
-YourResourceModel Service
+Shopcarts Service
 
 This service implements a REST API that allows you to Create, Read, Update
-and Delete YourResourceModel
+and Delete Shopcarts
 """
 
 from flask import jsonify, request, abort, url_for
@@ -163,8 +163,6 @@ def get_user_shopcart(user_id):
     try:
 
         user_items = Shopcart.find_by_user_id(user_id=user_id)
-        for i in user_items:
-            print(i.serialize())
 
         if not user_items:
             return abort(
@@ -192,7 +190,7 @@ def get_user_shopcart_items(user_id):
 
     try:
         user_items = Shopcart.find_by_user_id(user_id=user_id)
-        print(user_items)
+
         if not user_items:
             return abort(
                 status.HTTP_404_NOT_FOUND, f"User with id '{user_id}' was not found."
