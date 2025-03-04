@@ -935,3 +935,78 @@ class TestShopcartService(TestCase):
             data = response.get_json()
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Create error")
+
+    ######################################################################
+    #  Get Cart Item Testcase
+    ######################################################################
+
+    def test_get_cart_item(self):
+        """It should get a specific item from a user's shopcart"""
+        user_id = 1
+        # Create test data
+        shopcarts = self._populate_shopcarts(count=3, user_id=user_id)
+        item_id = shopcarts[0].item_id
+
+        # Get the specific item
+        response = self.client.get(f"/shopcarts/{user_id}/items/{item_id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check the response data
+        data = response.get_json()
+        self.assertEqual(data["user_id"], user_id)
+        self.assertEqual(data["item_id"], item_id)
+        self.assertEqual(data["description"], shopcarts[0].description)
+        self.assertEqual(data["quantity"], shopcarts[0].quantity)
+        self.assertAlmostEqual(float(data["price"]), float(shopcarts[0].price))
+        self.assertIn("created_at", data)
+        self.assertIn("last_updated", data)
+
+    def test_get_cart_item_not_found(self):
+        """It should return 404 when trying to get a non-existent item from a shopcart"""
+        user_id = 1
+        # Create some items for the user (to ensure the user exists)
+        self._populate_shopcarts(count=1, user_id=user_id)
+
+        # Try to get a non-existent item
+        non_existent_item_id = 9999
+        response = self.client.get(f"/shopcarts/{user_id}/items/{non_existent_item_id}")
+
+        # Verify it returns a 404 Not Found
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        data = response.get_json()
+        self.assertIn("error", data)
+        self.assertIn(f"Item {non_existent_item_id} not found", data["error"])
+
+    def test_get_cart_item_non_existent_user(self):
+        """It should return 404 when trying to get an item for a non-existent user"""
+        # Try to get an item for a user that doesn't exist
+        non_existent_user_id = 9999
+        response = self.client.get(f"/shopcarts/{non_existent_user_id}/items/1")
+
+        # Verify it returns a 404 Not Found
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        data = response.get_json()
+        self.assertIn("error", data)
+
+    def test_get_cart_item_server_error(self):
+        """It should handle server errors gracefully when getting a specific item"""
+        user_id = 1
+        item_id = 1
+        # Create some test data to make sure the database is working initially
+        self._populate_shopcarts(count=1, user_id=user_id)
+
+        # Mock the database query to raise an exception with a specific message
+        with patch(
+            "service.models.Shopcart.find", side_effect=Exception("Database error")
+        ):
+            response = self.client.get(f"/shopcarts/{user_id}/items/{item_id}")
+
+            # Verify the status code is 500 (Internal Server Error)
+            self.assertEqual(
+                response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+            # Verify the response contains an error message
+            data = response.get_json()
+            self.assertIn("error", data)
+            self.assertEqual(data["error"], "Internal server error: Database error")
