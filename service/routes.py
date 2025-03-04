@@ -172,6 +172,39 @@ def get_user_shopcart_items(user_id):
         )
 
 
+@app.route("/shopcart/<int:user_id>/items/<int:item_id>", methods=["PUT"])
+def update_cart_item(user_id, item_id):
+    """Update a specific item in a user's shopping cart."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Missing JSON payload"}), status.HTTP_400_BAD_REQUEST
+
+    quantity = int(data.get("quantity"))
+    if quantity < 0:
+        return (
+            jsonify({"error": "Quantity cannot be negative"}),
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    cart_item = Shopcart.find(user_id, item_id)
+    if not cart_item:
+        return (
+            jsonify({"error": f"Item {item_id} not found in user {user_id}'s cart"}),
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    if quantity == 0:
+        cart_item.delete()
+        return (
+            jsonify({"message": f"Item {item_id} removed from cart"}),
+            status.HTTP_200_OK,
+        )
+
+    cart_item.quantity = quantity
+    cart_item.update()
+    return jsonify(cart_item.serialize()), status.HTTP_200_OK
+
+
 @app.route("/shopcarts/<int:user_id>", methods=["PUT"])
 def update_shopcart(user_id):
     """Update an existing shopcart."""
