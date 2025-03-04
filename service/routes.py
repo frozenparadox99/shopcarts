@@ -389,3 +389,39 @@ def update_shopcart(user_id):
     # Return the updated cart for the user
     cart = [item.serialize() for item in Shopcart.find_by_user_id(user_id)]
     return jsonify(cart), status.HTTP_200_OK
+
+
+@app.route("/shopcarts/<int:user_id>/items/<int:item_id>", methods=["GET"])
+def get_cart_item(user_id, item_id):
+    """Gets a specific item from a user's shopcart"""
+    app.logger.info("Request to get item %s for user_id: %s", item_id, user_id)
+
+    try:
+        # First check if the user exists by trying to get any items for this user
+        user_items = Shopcart.find_by_user_id(user_id=user_id)
+        if not user_items:
+            return abort(
+                status.HTTP_404_NOT_FOUND, f"User with id '{user_id}' was not found."
+            )
+
+        # Now try to find the specific item
+        cart_item = Shopcart.find(user_id, item_id)
+        if not cart_item:
+            return (
+                jsonify(
+                    {"error": f"Item {item_id} not found in user {user_id}'s cart"}
+                ),
+                status.HTTP_404_NOT_FOUND,
+            )
+
+        # Return the serialized item
+        return jsonify(cart_item.serialize()), status.HTTP_200_OK
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        app.logger.error(f"Error retrieving item {item_id} for user_id: '{user_id}'")
+        return (
+            jsonify({"error": f"Internal server error: {str(e)}"}),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
