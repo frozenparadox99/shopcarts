@@ -739,3 +739,89 @@ class TestShopcartService(TestCase):
         data = response.get_json()
         self.assertIn("error", data)
         self.assertIn("Invalid input", data["error"])
+
+    def test_add_product_no_payload(self):
+        """It should return a 400 error when no JSON payload is provided"""
+        user_id = 1
+        # Send request with no JSON data
+        response = self.client.post(f"/shopcarts/{user_id}/items", json={})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.get_json()
+        self.assertIn("error", data)
+        self.assertEqual(data["error"], "Missing JSON payload")
+
+    def test_add_product_exceeds_stock_when_combined(self):
+        """It should return a 400 error if adding more would exceed available stock"""
+        user_id = 1
+        # First add 3 units of product 111 (with stock of 5)
+        initial_payload = mock_product(product_id=111, stock=5, quantity=3)
+        self.client.post(f"/shopcarts/{user_id}/items", json=initial_payload)
+
+        # Then try to add 3 more units (3 + 3 > 5 stock)
+        additional_payload = mock_product(product_id=111, stock=5, quantity=3)
+        response = self.client.post(
+            f"/shopcarts/{user_id}/items", json=additional_payload
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.get_json()
+        self.assertIn("error", data)
+        self.assertEqual(data["error"], "Cannot exceed 5 units in stock")
+
+    def test_add_product_exceeds_purchase_limit_when_combined(self):
+        """It should return a 400 error if adding more would exceed purchase limit"""
+        user_id = 1
+        # First add 2 units of product 111 (with purchase limit of 3)
+        initial_payload = mock_product(
+            product_id=111, stock=10, purchase_limit=3, quantity=2
+        )
+        self.client.post(f"/shopcarts/{user_id}/items", json=initial_payload)
+
+        # Then try to add 2 more units (2 + 2 > 3 purchase limit)
+        additional_payload = mock_product(
+            product_id=111, stock=10, purchase_limit=3, quantity=2
+        )
+        response = self.client.post(
+            f"/shopcarts/{user_id}/items", json=additional_payload
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.get_json()
+        self.assertIn("error", data)
+        self.assertEqual(data["error"], "Cannot exceed purchase limit of 3")
+
+    def test_add_product_update_exception(self):
+        """It should handle exceptions during cart item update"""
+        user_id = 1
+        # First add an item to the cart
+        initial_payload = mock_product(product_id=111, stock=10, quantity=1)
+        self.client.post(f"/shopcarts/{user_id}/items", json=initial_payload)
+
+        # Now try to add more of the same item, but mock an exception during update
+        with patch(
+            "service.models.Shopcart.update", side_effect=Exception("Update error")
+        ):
+            additional_payload = mock_product(product_id=111, stock=10, quantity=1)
+            response = self.client.post(
+                f"/shopcarts/{user_id}/items", json=additional_payload
+            )
+
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            data = response.get_json()
+            self.assertIn("error", data)
+            self.assertEqual(data["error"], "Update error")
+
+    def test_add_product_create_exception(self):
+        """It should handle exceptions during cart item creation"""
+        user_id = 1
+        # Try to add a new item, but mock an exception during creation
+        with patch(
+            "service.models.Shopcart.create", side_effect=Exception("Create error")
+        ):
+            payload = mock_product(product_id=111, stock=10, quantity=1)
+            response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            data = response.get_json()
+            self.assertIn("error", data)
+            self.assertEqual(data["error"], "Create error")
