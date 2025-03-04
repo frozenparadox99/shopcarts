@@ -1010,3 +1010,55 @@ class TestShopcartService(TestCase):
             data = response.get_json()
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Internal server error: Database error")
+
+    ######################################################################
+    #  Delete Shopcart Testcase
+    ######################################################################
+
+    def test_delete_shopcart(self):
+        """It should delete an entire shopcart for a user"""
+        user_id = 1
+        # Create test data
+        self._populate_shopcarts(count=3, user_id=user_id)
+
+        # Send delete request
+        response = self.client.delete(f"/shopcarts/{user_id}")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(response.data), 0)
+
+        # Verify the shopcart is deleted by trying to get it
+        get_response = self.client.get(f"/shopcarts/{user_id}")
+        self.assertEqual(get_response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_non_existing_shopcart(self):
+        """It should return 204 even when deleting a non-existent shopcart"""
+        # Try to delete a shopcart for a user that doesn't exist
+        non_existent_user_id = 9999
+        response = self.client.delete(f"/shopcarts/{non_existent_user_id}")
+
+        # Should still return 204 No Content
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(response.data), 0)
+
+    def test_delete_shopcart_server_error(self):
+        """It should handle server errors gracefully when deleting a shopcart"""
+        user_id = 1
+        # Create some test data
+        self._populate_shopcarts(count=1, user_id=user_id)
+
+        # Mock the database query to raise an exception
+        with patch(
+            "service.models.Shopcart.find_by_user_id",
+            side_effect=Exception("Database error"),
+        ):
+            response = self.client.delete(f"/shopcarts/{user_id}")
+
+            # Verify the status code is 500 (Internal Server Error)
+            self.assertEqual(
+                response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+            # Verify the response contains an error message
+            data = response.get_json()
+            self.assertIn("error", data)
+            self.assertEqual(data["error"], "Internal server error: Database error")
