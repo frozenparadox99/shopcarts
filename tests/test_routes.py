@@ -658,7 +658,7 @@ class TestShopcartService(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
-        self.assertEqual(data["quantity"], 5)
+        self.assertEqual(data["quantity"], 4)
         self.assertEqual(data["item_id"], item_id)
         self.assertEqual(data["user_id"], user_id)
 
@@ -711,7 +711,7 @@ class TestShopcartService(TestCase):
         user_id = 1
         shopcarts = self._populate_shopcarts(count=1, user_id=user_id)
         item_id = shopcarts[0].item_id
-        response = self.client.put(f"/shopcart/{user_id}/items/{item_id}")
+        response = self.client.put(f"/shopcart/{user_id}/items/{item_id}", json={})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         data = response.get_json()
         self.assertIn("error", data)

@@ -176,6 +176,9 @@ def get_user_shopcart_items(user_id):
 def update_cart_item(user_id, item_id):
     """Update a specific item in a user's shopping cart."""
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Missing JSON payload"}), status.HTTP_400_BAD_REQUEST
+
     quantity = int(data.get("quantity"))
     if quantity < 0:
         return (
