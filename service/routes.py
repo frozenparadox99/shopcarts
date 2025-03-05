@@ -69,8 +69,6 @@ def index():
 #  R E S T   A P I   E N D P O I N T S
 ######################################################################
 
-# Todo: Place your REST API code here ...
-
 
 @app.route("/shopcarts/<int:user_id>", methods=["POST"])
 def add_to_or_create_cart(user_id):
@@ -496,7 +494,9 @@ def delete_shopcart_item(user_id, item_id):
     This endpoint removes a single item from a shopping cart while preserving the cart
     and any other items that may be in it
     """
-    app.logger.info("Request to delete item_id: %s from user_id: %s shopping cart", item_id, user_id)
+    app.logger.info(
+        "Request to delete item_id: %s from user_id: %s shopping cart", item_id, user_id
+    )
 
     try:
         # Find the specific item in the user's cart
@@ -505,28 +505,28 @@ def delete_shopcart_item(user_id, item_id):
         # Check if the item exists in the cart
         if not cart_item:
             return (
-                jsonify({"error": f"Item with id {item_id} was not found in user {user_id}'s cart"}),
-                status.HTTP_404_NOT_FOUND
+                jsonify(
+                    {
+                        "error": f"Item with id {item_id} was not found in user {user_id}'s cart"
+                    }
+                ),
+                status.HTTP_404_NOT_FOUND,
             )
 
         # Delete the item from the cart
         cart_item.delete()
 
-        # Verify the deletion was successful
-        if Shopcart.find(user_id, item_id):
-            return (
-                jsonify({"error": f"Failed to delete item {item_id} from user {user_id}'s cart"}),
-                status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
         # Return empty response with 204 NO CONTENT status
-        app.logger.info("Item with ID: %d deleted from user %d's cart", item_id, user_id)
+        app.logger.info(
+            "Item with ID: %d deleted from user %d's cart", item_id, user_id
+        )
         return {}, status.HTTP_204_NO_CONTENT
 
     except Exception as e:
-        app.logger.error(f"Error deleting item {item_id} from user {user_id}'s cart: {str(e)}")
+        app.logger.error(
+            f"Error deleting item {item_id} from user {user_id}'s cart: {str(e)}"
+        )
         return (
             jsonify({"error": f"Internal server error: {str(e)}"}),
-            status.HTTP_500_INTERNAL_SERVER_ERROR
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-
