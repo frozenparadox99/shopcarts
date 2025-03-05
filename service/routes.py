@@ -21,11 +21,11 @@ This service implements a REST API that allows you to Create, Read, Update
 and Delete Shopcarts
 """
 
+from werkzeug.exceptions import HTTPException
 from flask import jsonify, request, abort, url_for
 from flask import current_app as app  # Import Flask application
 from service.models import Shopcart
 from service.common import status  # HTTP Status Codes
-from werkzeug.exceptions import HTTPException
 
 
 ######################################################################
@@ -92,7 +92,7 @@ def add_to_or_create_cart(user_id):
         cart_item.quantity += quantity
         try:
             cart_item.update()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             return (
                 jsonify({"error": f"Internal server error: {str(e)}"}),
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -108,7 +108,7 @@ def add_to_or_create_cart(user_id):
         )
         try:
             new_item.create()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             return (
                 jsonify({"error": f"Internal server error: {str(e)}"}),
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -145,7 +145,7 @@ def list_shopcarts():
 
         return jsonify(shopcarts_list), status.HTTP_200_OK
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         app.logger.error(f"Error listing shopcarts: {str(e)}")
         return (
             jsonify({"error": f"Internal server error: {str(e)}"}),
@@ -173,7 +173,7 @@ def get_user_shopcart(user_id):
         return jsonify(user_list), status.HTTP_200_OK
     except HTTPException as e:
         raise e
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         app.logger.error(f"Error reading shopcart for user_id: '{user_id}'")
         return (
             jsonify({"error": f"Internal server error: {str(e)}"}),
@@ -203,7 +203,7 @@ def get_user_shopcart_items(user_id):
         return jsonify(items_list), status.HTTP_200_OK
     except HTTPException as e:
         raise e
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         app.logger.error(f"Error reading items for user_id: '{user_id}'")
         return (
             jsonify({"error": f"Internal server error: {str(e)}"}),
@@ -229,7 +229,7 @@ def validate_request_data(data):
 
         return product_id, quantity, name, price, stock, purchase_limit
     except (KeyError, ValueError, TypeError) as e:
-        raise ValueError(f"Invalid input: {e}")
+        raise ValueError(f"Invalid input: {e}") from e
 
 
 def validate_stock_and_limits(quantity, stock, purchase_limit):
@@ -255,10 +255,14 @@ def validate_stock_and_limits(quantity, stock, purchase_limit):
     return None
 
 
-def update_or_create_cart_item(
-    user_id, product_id, quantity, name, price, stock, purchase_limit
-):
+def update_or_create_cart_item(user_id, product_data):
     """Update an existing cart item or create a new one."""
+    product_id = product_data["product_id"]
+    quantity = product_data["quantity"]
+    name = product_data["name"]
+    price = product_data["price"]
+    stock = product_data["stock"]
+    purchase_limit = product_data["purchase_limit"]
     cart_item = Shopcart.find(user_id, product_id)
 
     if cart_item:
@@ -307,10 +311,16 @@ def add_product_to_cart(user_id):
 
     # Look for an existing cart item (composite key: user_id & product_id)
     try:
-        cart_items = update_or_create_cart_item(
-            user_id, product_id, quantity, name, price, stock, purchase_limit
-        )
-    except Exception as e:
+        product_data = {
+            "product_id": product_id,
+            "quantity": quantity,
+            "name": name,
+            "price": price,
+            "stock": stock,
+            "purchase_limit": purchase_limit,
+        }
+        cart_items = update_or_create_cart_item(user_id, product_data)
+    except Exception as e:  # pylint: disable=broad-except
         app.logger.error("Cart update error: %s", e)
         return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
 
@@ -394,7 +404,7 @@ def update_cart_item_helper(user_id, item_id, quantity):
 
 
 @app.route("/shopcarts/<int:user_id>", methods=["PUT"])
-def update_shopcart(user_id):
+def update_shopcart(user_id):  # pylint: disable=too-many-return-statements
     """Update an existing shopcart."""
     data = request.get_json()
     if not data:
@@ -421,7 +431,7 @@ def update_shopcart(user_id):
     except ValueError as e:
         app.logger.error("Cart update validation error: %s", e)
         return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         app.logger.error("Cart update error: %s", e)
         return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
 
@@ -457,7 +467,7 @@ def get_cart_item(user_id, item_id):
 
     except HTTPException as e:
         raise e
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         app.logger.error(f"Error retrieving item {item_id} for user_id: '{user_id}'")
         return (
             jsonify({"error": f"Internal server error: {str(e)}"}),
@@ -484,7 +494,7 @@ def delete_shopcart(user_id):
         app.logger.info("Shopcart for user %s deleted", user_id)
         return {}, status.HTTP_204_NO_CONTENT
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         app.logger.error(
             "Error deleting shopcart for user_id: %s - %s", user_id, str(e)
         )
@@ -529,7 +539,7 @@ def delete_shopcart_item(user_id, item_id):
         )
         return {}, status.HTTP_204_NO_CONTENT
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         app.logger.error(
             f"Error deleting item {item_id} from user {user_id}'s cart: {str(e)}"
         )
