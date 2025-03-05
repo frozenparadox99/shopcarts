@@ -570,6 +570,30 @@ class TestShopcartService(TestCase):
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Update error")
 
+    def test_update_shopcart_item_not_found(self):
+        """It should return a 404 error when updating a shopcart with an item that doesn't exist"""
+        user_id = 1
+        # Create a shopcart with one item
+        shopcarts = self._populate_shopcarts(count=1, user_id=user_id)
+        existing_item_id = shopcarts[0].item_id
+
+        # Try to update with a mix of existing and non-existing items
+        non_existent_item_id = 9999  # An item ID that doesn't exist
+        update_cart = {
+            "items": [
+                {"item_id": existing_item_id, "quantity": 10},
+                {"item_id": non_existent_item_id, "quantity": 5},
+            ]
+        }
+
+        response = self.client.put(f"/shopcarts/{user_id}", json=update_cart)
+
+        # Check response status and error message
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        data = response.get_json()
+        self.assertIn("error", data)
+        self.assertIn(f"Item {non_existent_item_id} not found", data["error"])
+
     def test_get_user_shopcart_items(self):
         """It should get all items in a user's shopcart"""
         # Create test data for user 1
