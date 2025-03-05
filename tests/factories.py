@@ -1,3 +1,10 @@
+"""
+Factory module for generating test data for the shopcart service.
+
+This module provides factories to create fake Shopcart objects for testing
+purposes using factory_boy and faker.
+"""
+
 import factory
 from faker import Faker
 from service.models import Shopcart
@@ -10,17 +17,20 @@ used_shopcart_pairs = set()
 class ShopcartFactory(factory.Factory):
     """Creates fake Shopcart entries"""
 
-    class Meta:
+    class Meta:  # pylint: disable=too-few-public-methods
+        """Meta class for ShopcartFactory"""
+
         model = Shopcart
 
     user_id = None
-    description = factory.LazyFunction(lambda: fake.sentence())
+    description = factory.LazyFunction(fake.sentence)
     quantity = factory.LazyFunction(lambda: fake.random_int(min=1, max=50))
     price = factory.LazyFunction(lambda: round((fake.random_number(digits=5) / 10), 2))
-    created_at = factory.LazyFunction(lambda: fake.date_time_this_decade())
+    created_at = factory.LazyFunction(fake.date_time_this_decade)
 
     @factory.lazy_attribute
     def last_updated(self):
+        """Generate a last_updated attribute"""
         return fake.date_time_between(start_date=self.created_at)
 
     @staticmethod
@@ -36,7 +46,9 @@ class ShopcartFactory(factory.Factory):
                 return user_id, item_id
 
     @factory.post_generation
-    def assign_unique_user_item(self, create, extracted, **kwargs):
+    def assign_unique_user_item(
+        self, create, extracted, **kwargs
+    ):  # pylint: disable=unused-argument
         """
         Assigns a unique user_id and item_id after object creation.
         If a specific user_id was provided when calling the factory,
@@ -44,8 +56,8 @@ class ShopcartFactory(factory.Factory):
         """
 
         provided_user_id = self.user_id
-        self.user_id, self.item_id = ShopcartFactory.generate_unique_user_item(
-            user_id=provided_user_id
+        self.user_id, self.item_id = (  # pylint: disable=attribute-defined-outside-init
+            ShopcartFactory.generate_unique_user_item(user_id=provided_user_id)
         )
 
 
@@ -56,7 +68,8 @@ def mock_product(
     purchase_limit=None,
     price=9.99,
     quantity=1,
-):
+):  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    """Mock product data"""
     return {
         "product_id": product_id,
         "name": name,

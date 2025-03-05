@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 ######################################################################
 # Copyright 2016, 2024 John J.
 # Rofrano. All Rights Reserved.
@@ -206,6 +207,7 @@ class TestShopcartService(TestCase):
         self.assertIn("Missing JSON payload", resp.get_json()["error"])
 
     def test_add_item_internal_server_error_update(self):
+        """It should return a 500 error when the database update fails"""
         with patch(
             "service.models.Shopcart.update", side_effect=Exception("Database error")
         ):
@@ -236,6 +238,7 @@ class TestShopcartService(TestCase):
             self.assertEqual(data["error"], "Internal server error: Database error")
 
     def test_add_item_internal_server_error_create(self):
+        """It should return a 500 error when the database creation fails"""
         with patch(
             "service.models.Shopcart.create", side_effect=Exception("Database error")
         ):
@@ -334,7 +337,7 @@ class TestShopcartService(TestCase):
             for item in cart["items"]:
                 expanded_data.append(item)
         self.assertEqual(len(expanded_data), 4)
-        user_ids = set([cart["user_id"] for cart in data])
+        user_ids = {cart["user_id"] for cart in data}
         self.assertEqual(user_ids, {1, 2})
 
         # Grab shopcart for user_id = 1
@@ -342,7 +345,7 @@ class TestShopcartService(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         user_data = resp.get_json()
         self.assertIsInstance(user_data, list)
-        self.assertEqual(set([cart["user_id"] for cart in user_data]), {1})
+        self.assertEqual({cart["user_id"] for cart in user_data}, {1})
         self.assertEqual(len(user_data), 1)
         self.assertEqual(len(user_data[0]["items"]), 3)
 
@@ -374,7 +377,7 @@ class TestShopcartService(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         user_data_2 = resp.get_json()
         self.assertIsInstance(user_data_2, list)
-        self.assertEqual(set([cart["user_id"] for cart in user_data_2]), {2})
+        self.assertEqual({cart["user_id"] for cart in user_data_2}, {2})
         self.assertEqual(len(user_data_2), 1)
         self.assertEqual(len(user_data_2[0]["items"]), 1)
         for shopcart in shopcart_user_2:
@@ -411,7 +414,7 @@ class TestShopcartService(TestCase):
             for item in cart["items"]:
                 expanded_data.append(item)
         self.assertEqual(len(expanded_data), 3)
-        user_ids = set([cart["user_id"] for cart in data])
+        user_ids = {cart["user_id"] for cart in data}
         self.assertEqual(user_ids, {1})
 
         # Grab shopcart for user_id = 2
@@ -570,6 +573,30 @@ class TestShopcartService(TestCase):
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Update error")
 
+    def test_update_shopcart_item_not_found(self):
+        """It should return a 404 error when updating a shopcart with an item that doesn't exist"""
+        user_id = 1
+        # Create a shopcart with one item
+        shopcarts = self._populate_shopcarts(count=1, user_id=user_id)
+        existing_item_id = shopcarts[0].item_id
+
+        # Try to update with a mix of existing and non-existing items
+        non_existent_item_id = 9999  # An item ID that doesn't exist
+        update_cart = {
+            "items": [
+                {"item_id": existing_item_id, "quantity": 10},
+                {"item_id": non_existent_item_id, "quantity": 5},
+            ]
+        }
+
+        response = self.client.put(f"/shopcarts/{user_id}", json=update_cart)
+
+        # Check response status and error message
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        data = response.get_json()
+        self.assertIn("error", data)
+        self.assertIn(f"Item {non_existent_item_id} not found", data["error"])
+
     def test_get_user_shopcart_items(self):
         """It should get all items in a user's shopcart"""
         # Create test data for user 1
@@ -592,7 +619,7 @@ class TestShopcartService(TestCase):
 
         # Verify each item exists in the response
         self.assertIsInstance(data, list)
-        self.assertEqual(set([cart["user_id"] for cart in data]), {1})
+        self.assertEqual({cart["user_id"] for cart in data}, {1})
         self.assertEqual(len(data), 1)
         self.assertEqual(len(data[0]["items"]), 3)
 
