@@ -1053,3 +1053,5 @@ class TestShopcartService(TestCase):
             data = response.get_json()
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Internal server error: Database error")
+
+    
