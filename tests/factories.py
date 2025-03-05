@@ -23,6 +23,7 @@ class ShopcartFactory(factory.Factory):
         model = Shopcart
 
     user_id = None
+    item_id = None
     description = factory.LazyFunction(fake.sentence)
     quantity = factory.LazyFunction(lambda: fake.random_int(min=1, max=50))
     price = factory.LazyFunction(lambda: round((fake.random_number(digits=5) / 10), 2))
@@ -56,8 +57,8 @@ class ShopcartFactory(factory.Factory):
         """
 
         provided_user_id = self.user_id
-        self.user_id, self.item_id = (  # pylint: disable=attribute-defined-outside-init
-            ShopcartFactory.generate_unique_user_item(user_id=provided_user_id)
+        self.user_id, self.item_id = ShopcartFactory.generate_unique_user_item(
+            user_id=provided_user_id
         )
 
 
