@@ -1058,26 +1058,26 @@ class TestShopcartService(TestCase):
 ######################################################################
     #  Delete Cart Item Testcase
 ######################################################################
+
     def test_delete_cart_item_success(self):
-            """It should delete a specific item from a user's shopcart"""
             user_id = 1
             # Create test data with multiple items for the user
             shopcarts = self._populate_shopcarts(count=3, user_id=user_id)
             item_id = shopcarts[0].item_id
-            
+
             # Verify item exists before deletion
             initial_response = self.client.get(f"/shopcarts/{user_id}/items/{item_id}")
             self.assertEqual(initial_response.status_code, status.HTTP_200_OK)
-            
+
             # Delete the item
             delete_response = self.client.delete(f"/shopcarts/{user_id}/items/{item_id}")
             self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
             self.assertEqual(len(delete_response.data), 0)
-            
+
             # Verify the item was deleted
             get_response = self.client.get(f"/shopcarts/{user_id}/items/{item_id}")
             self.assertEqual(get_response.status_code, status.HTTP_404_NOT_FOUND)
-            
+
             # Verify the cart still exists with remaining items
             cart_response = self.client.get(f"/shopcarts/{user_id}")
             self.assertEqual(cart_response.status_code, status.HTTP_200_OK)
@@ -1090,11 +1090,11 @@ class TestShopcartService(TestCase):
         user_id = 1
         # Create a cart with some items
         self._populate_shopcarts(count=1, user_id=user_id)
-        
+
         # Try to delete an item that doesn't exist
         non_existent_item_id = 9999
         response = self.client.delete(f"/shopcarts/{user_id}/items/{non_existent_item_id}")
-        
+
         # Should return 404 Not Found
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         data = response.get_json()
@@ -1106,7 +1106,7 @@ class TestShopcartService(TestCase):
         # Try to delete an item for a user that doesn't exist
         non_existent_user_id = 9999
         response = self.client.delete(f"/shopcarts/{non_existent_user_id}/items/1")
-        
+
         # Should return 404 Not Found
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         data = response.get_json()
@@ -1119,41 +1119,41 @@ class TestShopcartService(TestCase):
         # Create test data
         shopcarts = self._populate_shopcarts(count=1, user_id=user_id)
         item_id = shopcarts[0].item_id
-        
+
         # Mock the delete method to raise an exception
         with patch(
-            "service.models.Shopcart.delete", 
+            "service.models.Shopcart.delete",
             side_effect=Exception("Database error")
         ):
             response = self.client.delete(f"/shopcarts/{user_id}/items/{item_id}")
-            
+
             # Verify the status code is 500 (Internal Server Error)
             self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
+
             # Verify the response contains an error message
             data = response.get_json()
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Internal server error: Database error")
-            
+
     def test_delete_cart_item_verification_failure(self):
         """It should handle the case where verification after deletion fails"""
         user_id = 1
         # Create test data
         shopcarts = self._populate_shopcarts(count=1, user_id=user_id)
         item_id = shopcarts[0].item_id
-        
+
         # Using a patch to make the verification check fail
-        # The first find() returns the item, then delete() is called, 
+        # The first find() returns the item, then delete() is called,
         # then the second find() should return None but we make it return the item again
         with patch(
             "service.models.Shopcart.find",
             side_effect=[shopcarts[0], shopcarts[0]]
         ):
             response = self.client.delete(f"/shopcarts/{user_id}/items/{item_id}")
-            
+
             # Verify the status code is 500 (Internal Server Error)
             self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
+
             # Verify the response contains the specific error message
             data = response.get_json()
             self.assertIn("error", data)

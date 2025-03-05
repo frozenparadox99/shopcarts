@@ -488,6 +488,7 @@ def delete_shopcart(user_id):
             status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
+
 @app.route("/shopcarts/<int:user_id>/items/<int:item_id>", methods=["DELETE"])
 def delete_shopcart_item(user_id, item_id):
     """
@@ -528,5 +529,4 @@ def delete_shopcart_item(user_id, item_id):
             jsonify({"error": f"Internal server error: {str(e)}"}),
             status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
 
