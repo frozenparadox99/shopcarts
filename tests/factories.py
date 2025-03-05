@@ -23,6 +23,7 @@ class ShopcartFactory(factory.Factory):
         model = Shopcart
 
     user_id = None
+    item_id = None
     description = factory.LazyFunction(fake.sentence)
     quantity = factory.LazyFunction(lambda: fake.random_int(min=1, max=50))
     price = factory.LazyFunction(lambda: round((fake.random_number(digits=5) / 10), 2))
@@ -56,25 +57,34 @@ class ShopcartFactory(factory.Factory):
         """
 
         provided_user_id = self.user_id
-        self.user_id, self.item_id = (  # pylint: disable=attribute-defined-outside-init
-            ShopcartFactory.generate_unique_user_item(user_id=provided_user_id)
+        self.user_id, self.item_id = ShopcartFactory.generate_unique_user_item(
+            user_id=provided_user_id
         )
 
 
-def mock_product(
-    product_id=111,
-    name="Test Product",
-    stock=10,
-    purchase_limit=None,
-    price=9.99,
-    quantity=1,
-):  # pylint: disable=too-many-arguments,too-many-positional-arguments
-    """Mock product data"""
-    return {
-        "product_id": product_id,
-        "name": name,
-        "stock": stock,
-        "purchase_limit": purchase_limit,
-        "price": price,
-        "quantity": quantity,
+def mock_product(**kwargs):
+    """
+    Mock product data
+
+    Keyword arguments:
+        product_id (int): Product ID (default: 111)
+        name (str): Product name (default: "Test Product")
+        stock (int): Available stock (default: 10)
+        purchase_limit (int): Maximum purchase quantity (default: None)
+        price (float): Product price (default: 9.99)
+        quantity (int): Quantity to add to cart (default: 1)
+    """
+    # Set default values
+    product = {
+        "product_id": 111,
+        "name": "Test Product",
+        "stock": 10,
+        "purchase_limit": None,
+        "price": 9.99,
+        "quantity": 1,
     }
+
+    # Update with provided values
+    product.update(kwargs)
+
+    return product

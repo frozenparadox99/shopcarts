@@ -404,39 +404,46 @@ def update_cart_item_helper(user_id, item_id, quantity):
 
 
 @app.route("/shopcarts/<int:user_id>", methods=["PUT"])
-def update_shopcart(user_id):  # pylint: disable=too-many-return-statements
+def update_shopcart(user_id):
     """Update an existing shopcart."""
+    # Initialize response variables
+    status_code = status.HTTP_200_OK
+    response_body = {}
+    response_headers = {}
+
+    # Get and validate JSON payload
     data = request.get_json()
     if not data:
-        return jsonify({"error": "Missing JSON payload"}), status.HTTP_400_BAD_REQUEST
+        response_body = {"error": "Missing JSON payload"}
+        status_code = status.HTTP_400_BAD_REQUEST
+    elif not Shopcart.find_by_user_id(user_id):
+        response_body = {"error": f"Shopcart for user {user_id} not found"}
+        status_code = status.HTTP_404_NOT_FOUND
+    else:
+        # Process the request if basic validation passes
+        try:
+            items = validate_items_list(data)
+            process_cart_updates(user_id, items)
+            # Get the updated cart for response
+            updated_cart = [
+                item.serialize() for item in Shopcart.find_by_user_id(user_id)
+            ]
+            response_body = updated_cart
+        except ValueError as e:
+            app.logger.error("Cart update validation error: %s", e)
+            response_body = {"error": str(e)}
+            status_code = status.HTTP_400_BAD_REQUEST
+        except LookupError as e:
+            # Item-not-found error from update_cart_item_helper
+            response_body = {"error": str(e)}
+            status_code = status.HTTP_404_NOT_FOUND
+        except Exception as e:  # pylint: disable=broad-except
+            app.logger.error("Cart update error: %s", e)
+            response_body = {"error": str(e)}
+            status_code = status.HTTP_400_BAD_REQUEST
 
-    # Validate items list
-    try:
-        items = validate_items_list(data)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
-
-    # Ensure the shopcart exists
-    if not Shopcart.find_by_user_id(user_id):
-        return (
-            jsonify({"error": f"Shopcart for user {user_id} not found"}),
-            status.HTTP_404_NOT_FOUND,
-        )
-
-    try:
-        process_cart_updates(user_id, items)
-    except LookupError as e:
-        # Catch the item-not-found error raised in update_cart_item_helper
-        return jsonify({"error": str(e)}), status.HTTP_404_NOT_FOUND
-    except ValueError as e:
-        app.logger.error("Cart update validation error: %s", e)
-        return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
-    except Exception as e:  # pylint: disable=broad-except
-        app.logger.error("Cart update error: %s", e)
-        return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
-
-    updated_cart = [item.serialize() for item in Shopcart.find_by_user_id(user_id)]
-    return jsonify(updated_cart), status.HTTP_200_OK
+    # Return the appropriate response
+    return jsonify(response_body), status_code, response_headers
 
 
 @app.route("/shopcarts/<int:user_id>/items/<int:item_id>", methods=["GET"])

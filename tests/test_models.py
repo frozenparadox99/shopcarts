@@ -34,11 +34,10 @@ DATABASE_URI = os.getenv(
 
 
 ######################################################################
-#  S H O P C A R T   M O D E L   T E S T   C A S E S
+#  S H O P C A R T   M O D E L   B A S E   T E S T   C A S E
 ######################################################################
-# pylint: disable=too-many-public-methods
-class TestYourResourceModel(TestCase):
-    """Test Cases for Shopcarts Model"""
+class ShopCartModelTestCase(TestCase):
+    """Base Test Case for Shopcarts Model"""
 
     @classmethod
     def setUpClass(cls):
@@ -63,9 +62,12 @@ class TestYourResourceModel(TestCase):
         """This runs after each test"""
         db.session.remove()
 
-    ######################################################################
-    #  T E S T   C A S E S
-    ######################################################################
+
+######################################################################
+#  S H O P C A R T   C R E A T I O N   T E S T   C A S E S
+######################################################################
+class TestShopCartCreation(ShopCartModelTestCase):
+    """Test Cases for Shopcart Creation"""
 
     def test_create_a_shopcart(self):
         """It should create a shopcart entry and assert that it exists"""
@@ -136,6 +138,13 @@ class TestYourResourceModel(TestCase):
         self.assertRaises(DataValidationError, shopcart.create)
 
         patcher.stop()
+
+
+######################################################################
+#  S H O P C A R T   V A L I D A T I O N   T E S T   C A S E S
+######################################################################
+class TestShopCartValidation(ShopCartModelTestCase):
+    """Test Cases for Shopcart Validation"""
 
     def test_missing_user_id_and_item_id(self):
         """It should fail if both user_id and item_id are missing"""
@@ -262,6 +271,13 @@ class TestYourResourceModel(TestCase):
             ).create(),
         )
 
+
+######################################################################
+#  S H O P C A R T   O P E R A T I O N S   T E S T   C A S E S
+######################################################################
+class TestShopCartOperations(ShopCartModelTestCase):
+    """Test Cases for Shopcart Operations"""
+
     def test_read_a_shopcart(self):
         """It should Read a Shopcart entry"""
         shopcart = ShopcartFactory()
@@ -376,6 +392,13 @@ class TestYourResourceModel(TestCase):
         # Check if we get back 5 Shopcarts
         shopcarts = Shopcart.all()
         self.assertEqual(len(shopcarts), 5)
+
+
+######################################################################
+#  S H O P C A R T   S E R I A L I Z A T I O N   T E S T   C A S E S
+######################################################################
+class TestShopCartSerialization(ShopCartModelTestCase):
+    """Test Cases for Shopcart Serialization"""
 
     def test_serialize_a_shopcart(self):
         """It should serialize a Shopcart"""
@@ -497,6 +520,13 @@ class TestYourResourceModel(TestCase):
         }
         shopcart = Shopcart()
         self.assertRaises(DataValidationError, shopcart.deserialize, test_shopcart)
+
+
+######################################################################
+#  S H O P C A R T   Q U E R Y   T E S T   C A S E S
+######################################################################
+class TestShopCartQueries(ShopCartModelTestCase):
+    """Test Cases for Shopcart Queries"""
 
     def test_find_shopcart(self):
         """It should Find a Shopcart entry by user_id and item_id"""
