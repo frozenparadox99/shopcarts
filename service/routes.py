@@ -370,24 +370,27 @@ def process_cart_updates(user_id, items):
             item_id = int(item["item_id"])
             quantity = int(item["quantity"])
         except (KeyError, ValueError, TypeError) as e:
-            raise ValueError(f"Invalid input: {e}")
+            raise ValueError(f"Invalid input: {e}") from e
 
         if quantity < 0:
             raise ValueError("Quantity cannot be negative")
 
+        # Attempt to update/remove the cart item
         update_cart_item_helper(user_id, item_id, quantity)
 
 
 def update_cart_item_helper(user_id, item_id, quantity):
     """Update or remove a cart item based on the given quantity."""
     cart_item = Shopcart.find(user_id, item_id)
+    if not cart_item:
+        # Raise an exception if the item does not exist
+        raise LookupError(f"Item {item_id} not found in user {user_id}'s cart")
 
-    if cart_item:
-        if quantity == 0:
-            cart_item.delete()
-        else:
-            cart_item.quantity = quantity
-            cart_item.update()
+    if quantity == 0:
+        cart_item.delete()
+    else:
+        cart_item.quantity = quantity
+        cart_item.update()
 
 
 @app.route("/shopcarts/<int:user_id>", methods=["PUT"])
@@ -410,14 +413,18 @@ def update_shopcart(user_id):
             status.HTTP_404_NOT_FOUND,
         )
 
-    # Process cart updates
     try:
         process_cart_updates(user_id, items)
+    except LookupError as e:
+        # Catch the item-not-found error raised in update_cart_item_helper
+        return jsonify({"error": str(e)}), status.HTTP_404_NOT_FOUND
+    except ValueError as e:
+        app.logger.error("Cart update validation error: %s", e)
+        return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
     except Exception as e:
         app.logger.error("Cart update error: %s", e)
         return jsonify({"error": str(e)}), status.HTTP_400_BAD_REQUEST
 
-    # Return updated cart
     updated_cart = [item.serialize() for item in Shopcart.find_by_user_id(user_id)]
     return jsonify(updated_cart), status.HTTP_200_OK
 
