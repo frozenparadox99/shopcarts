@@ -3,22 +3,46 @@ GET Controller logic for Shopcart Service
 """
 
 from werkzeug.exceptions import HTTPException
-from flask import jsonify, abort
+from flask import request, jsonify, abort
 from flask import current_app as app
 from service.models import Shopcart
-from service.common import status
+from service.common import status, helpers
 
 
 def get_shopcarts_controller():
     """List all shopcarts grouped by user"""
-    app.logger.info("Request to list shopcarts")
 
     try:
         # Initialize an empty list to store unique user shopcarts
         shopcarts_list = []
 
-        # Get all shopcarts grouped by user_id
-        all_items = Shopcart.all()
+        if not request.args:
+            app.logger.info("Request to list shopcarts")
+            # Get all shopcarts grouped by user_id
+            all_items = Shopcart.all()
+
+        else:
+            app.logger.info("Request to list shopcarts with query range")
+            filters = {}
+            try:
+                min_price, max_price = helpers.parse_range_param("range_price", float)
+                min_qty, max_qty = helpers.parse_range_param("range_qty", int)
+                min_date, max_date = helpers.parse_range_param(
+                    "range_created_at", None, date_format="%d-%m-%Y"
+                )
+                if min_price is not None:
+                    filters["min_price"] = min_price
+                    filters["max_price"] = max_price
+                if min_qty is not None:
+                    filters["min_qty"] = min_qty
+                    filters["max_qty"] = max_qty
+                if min_date is not None:
+                    filters["min_date"] = min_date
+                    filters["max_date"] = max_date
+            except ValueError as ve:
+                return jsonify({"error": str(ve)}), 400
+
+            all_items = Shopcart.find_by_ranges(filters=filters)
 
         # Group items by user_id
         user_items = {}

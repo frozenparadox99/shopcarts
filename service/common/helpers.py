@@ -2,7 +2,8 @@
 Helper functions for services
 """
 
-from flask import jsonify
+from datetime import datetime
+from flask import request, jsonify
 from service.common import status
 from service.models import Shopcart
 
@@ -120,3 +121,28 @@ def update_cart_item_helper(user_id, item_id, quantity):
     else:
         cart_item.quantity = quantity
         cart_item.update()
+
+
+def parse_range_param(param_name, cast_func, date_format=None):
+    value = request.args.get(param_name)
+    if not value:
+        return None, None
+
+    parts = value.split(",")
+    if len(parts) != 2:
+        raise ValueError(f"{param_name} must have two comma-separated values")
+
+    try:
+        if date_format:
+            min_val = datetime.strptime(parts[0], date_format)
+            max_val = datetime.strptime(parts[1], date_format)
+        else:
+            min_val = cast_func(parts[0])
+            max_val = cast_func(parts[1])
+    except Exception:
+        raise ValueError(f"{param_name} values are invalid or malformed")
+
+    if min_val > max_val:
+        raise ValueError(f"min value cannot be greater than max value in {param_name}")
+
+    return min_val, max_val
