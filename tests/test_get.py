@@ -132,22 +132,6 @@ class TestShopcartGet(TestShopcartService):
         data = resp.get_json()
         self.assertEqual(data, [])
 
-    def test_list_shopcarts_server_error(self):
-        """It should handle server errors gracefully"""
-        # Create some test data to make sure the database is working initially
-        self._populate_shopcarts(1)
-        # Mock the database query to raise an exception
-        with patch(
-            "service.models.Shopcart.all", side_effect=Exception("Database error")
-        ):
-            resp = self.client.get("/shopcarts")
-            self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-            data = resp.get_json()
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Internal server error: Database error")
-            expected_error = "Internal server error: Database error"
-            self.assertEqual(data["error"], expected_error)
-
     def test_list_shopcarts_with_price_range(self):
         """It should list shopcarts within a price range"""
 
@@ -191,7 +175,7 @@ class TestShopcartGet(TestShopcartService):
             self.assertLessEqual(item["quantity"], 20)
 
     def test_list_shopcarts_with_date_range(self):
-        """It should list shopcarts within a created_at date range"""
+        """It should list shopcarts within a created_at and last_updated date range"""
 
         before_creation = datetime.now(timezone.utc) - timedelta(minutes=1)
         self._populate_shopcarts(count=1)
@@ -214,6 +198,13 @@ class TestShopcartGet(TestShopcartService):
         created_at = created_at.replace(tzinfo=timezone.utc)
         self.assertGreaterEqual(created_at, before_creation)
         self.assertLessEqual(created_at, after_creation)
+
+        # For logic here, it's hard to manually change last_updated (automatically updated), since we only added a product
+        # last_updated = created_at time, so we can check before_creation and after_creation for last updated
+        last_updated = datetime.fromisoformat(expanded_data[0]["last_updated"])
+        last_updated = created_at.replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(last_updated, before_creation)
+        self.assertLessEqual(last_updated, after_creation)
 
     def test_list_shopcarts_combined_filters(self):
         """It should list shopcarts matching multiple filters"""

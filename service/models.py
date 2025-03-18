@@ -288,6 +288,9 @@ class Shopcart(db.Model):
         min_date = filters.get("min_date", datetime(1970, 1, 1))
         max_date = filters.get("max_date", datetime(3000, 1, 1))
 
+        min_update = filters.get("min_update", datetime(1970, 1, 1))
+        max_update = filters.get("max_update", datetime(3000, 1, 1))
+
         return cls.query.filter(
             cls.price >= min_price,
             cls.price <= max_price,
@@ -295,4 +298,6 @@ class Shopcart(db.Model):
             cls.quantity <= max_qty,
             cls.created_at >= min_date,
             cls.created_at <= max_date,
+            cls.last_updated >= min_update,
+            cls.last_updated <= max_update,
         ).all()

@@ -12,57 +12,37 @@ from service.common import status, helpers
 def get_shopcarts_controller():
     """List all shopcarts grouped by user"""
 
-    try:
-        # Initialize an empty list to store unique user shopcarts
-        shopcarts_list = []
+    # Initialize an empty list to store unique user shopcarts
+    shopcarts_list = []
 
-        if not request.args:
-            app.logger.info("Request to list shopcarts")
-            # Get all shopcarts grouped by user_id
-            all_items = Shopcart.all()
+    if not request.args:
+        app.logger.info("Request to list shopcarts")
+        # Get all shopcarts grouped by user_id
+        all_items = Shopcart.all()
 
-        else:
-            app.logger.info("Request to list shopcarts with query range")
-            filters = {}
-            try:
-                min_price, max_price = helpers.parse_range_param("range_price", float)
-                min_qty, max_qty = helpers.parse_range_param("range_qty", int)
-                min_date, max_date = helpers.parse_range_param(
-                    "range_created_at", None, date_format="%d-%m-%Y"
-                )
-                if min_price is not None:
-                    filters["min_price"] = min_price
-                    filters["max_price"] = max_price
-                if min_qty is not None:
-                    filters["min_qty"] = min_qty
-                    filters["max_qty"] = max_qty
-                if min_date is not None:
-                    filters["min_date"] = min_date
-                    filters["max_date"] = max_date
-            except ValueError as ve:
-                return jsonify({"error": str(ve)}), 400
-
+    else:
+        app.logger.info("Request to list shopcarts with query range")
+        filters = {}
+        try:
+            filters = helpers.extract_filters()
             all_items = Shopcart.find_by_ranges(filters=filters)
+        except ValueError as ve:
+            return jsonify({"error": str(ve)}), 400
 
-        # Group items by user_id
-        user_items = {}
-        for item in all_items:
-            if item.user_id not in user_items:
-                user_items[item.user_id] = []
-            user_items[item.user_id].append(item.serialize())
+        all_items = Shopcart.find_by_ranges(filters=filters)
 
-        # Create the response list
-        for user_id, items in user_items.items():
-            shopcarts_list.append({"user_id": user_id, "items": items})
+    # Group items by user_id
+    user_items = {}
+    for item in all_items:
+        if item.user_id not in user_items:
+            user_items[item.user_id] = []
+        user_items[item.user_id].append(item.serialize())
 
-        return jsonify(shopcarts_list), status.HTTP_200_OK
+    # Create the response list
+    for user_id, items in user_items.items():
+        shopcarts_list.append({"user_id": user_id, "items": items})
 
-    except Exception as e:  # pylint: disable=broad-except
-        app.logger.error(f"Error listing shopcarts: {str(e)}")
-        return (
-            jsonify({"error": f"Internal server error: {str(e)}"}),
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+    return jsonify(shopcarts_list), status.HTTP_200_OK
 
 
 def get_user_shopcart_controller(user_id):

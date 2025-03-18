@@ -146,3 +146,28 @@ def parse_range_param(param_name, cast_func, date_format=None):
         raise ValueError(f"min value cannot be greater than max value in {param_name}")
 
     return min_val, max_val
+
+
+def extract_filters():
+    """Extract range filters from request arguments."""
+    filters = {}
+    ranges = [
+        ("range_price", "min_price", "max_price", float, None),
+        ("range_qty", "min_qty", "max_qty", int, None),
+        ("range_created_at", "min_date", "max_date", None, "%d-%m-%Y"),
+        ("range_last_updated", "min_update", "max_update", None, "%d-%m-%Y"),
+    ]
+
+    for param, min_key, max_key, cast_type, date_format in ranges:
+        if date_format:
+            min_val, max_val = parse_range_param(
+                param, cast_type, date_format=date_format
+            )
+        else:
+            min_val, max_val = parse_range_param(param, cast_type)
+
+        if min_val is not None:
+            filters[min_key] = min_val
+            filters[max_key] = max_val
+
+    return filters
