@@ -301,3 +301,24 @@ class Shopcart(db.Model):
             cls.last_updated >= min_update,
             cls.last_updated <= max_update,
         ).all()
+
+    @classmethod
+    def finalize_cart(cls, user_id):
+        """Finalizes the cart for the given user_id"""
+        items = cls.find_by_user_id(user_id)
+        if not items:
+            raise DataValidationError(f"No cart found for user {user_id}")
+
+        # Calculate total price
+        total_price = 0.0
+        for item in items:
+            total_price += float(item.price) * item.quantity
+
+        if total_price == 0.0:
+            raise DataValidationError("Cart is empty. Nothing to checkout.")
+
+        # Remove each item from the database to represent "checked out"
+        for item in items:
+            item.delete()
+
+        return total_price

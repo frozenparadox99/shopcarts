@@ -96,3 +96,43 @@ class TestShopcartService(TestCase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             shopcarts.append(shopcart)
         return shopcarts
+
+    ######################################################################
+    #  T E S T   C A S E S   F O R   C H E C K O U T
+    ######################################################################
+    def test_checkout_success(self):
+        """It should finalize a cart successfully when items exist."""
+        user_id = 1
+        # Pre-populate the cart with 2 items
+        self._populate_shopcarts(count=2, user_id=user_id)
+
+        # Call the checkout endpoint
+        response = self.client.post(f"/shopcarts/{user_id}/checkout")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertIn("message", data)
+        self.assertIn("total_price", data)
+
+    def test_checkout_empty_cart(self):
+        """It should return 400 if the cart is empty."""
+        user_id = 2
+        response = self.client.post(f"/shopcarts/{user_id}/checkout")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.get_json()
+        self.assertIn("error", data)
+
+    def test_checkout_already_checked_out(self):
+        """It should return 400 if the cart is already checked out."""
+        user_id = 3
+        # Pre-populate with 1 item
+        self._populate_shopcarts(count=1, user_id=user_id)
+
+        # First checkout call (should succeed)
+        first_checkout = self.client.post(f"/shopcarts/{user_id}/checkout")
+        self.assertEqual(first_checkout.status_code, status.HTTP_200_OK)
+
+        # Second checkout call
+        second_checkout = self.client.post(f"/shopcarts/{user_id}/checkout")
+        self.assertEqual(second_checkout.status_code, status.HTTP_400_BAD_REQUEST)
+        data = second_checkout.get_json()
+        self.assertIn("error", data)

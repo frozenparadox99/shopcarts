@@ -24,6 +24,7 @@ and Delete Shopcarts
 from flask import jsonify
 from flask import current_app as app  # Import Flask application
 from service.common import status  # HTTP Status Codes
+from service.models import DataValidationError, Shopcart
 
 from service.controllers.get_controller import (
     get_shopcarts_controller,
@@ -175,3 +176,29 @@ def delete_shopcart_item(user_id, item_id):
     and any other items that may be in it
     """
     return delete_shopcart_item_controller(user_id, item_id)
+
+
+# ACTION ROUTE
+
+
+@app.route("/shopcarts/<int:user_id>/checkout", methods=["POST"])
+def checkout(user_id):
+    """Finalize a user's cart and proceed with payment."""
+    try:
+        total_price = Shopcart.finalize_cart(user_id)
+        return (
+            jsonify(
+                {
+                    "message": f"Cart {user_id} checked out successfully",
+                    "total_price": total_price,
+                }
+            ),
+            200,
+        )
+
+    except DataValidationError as e:
+        return jsonify({"error": str(e)}), 400
+
+    except Exception as e:  # pylint: disable=broad-except
+        app.logger.error("Checkout error for user %s: %s", user_id, e)
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
