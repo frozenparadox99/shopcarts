@@ -50,8 +50,17 @@ def get_user_shopcart_controller(user_id):
     app.logger.info("Request to get shopcart for user_id: '%s'", user_id)
 
     try:
-
-        user_items = Shopcart.find_by_user_id(user_id=user_id)
+        # Check if there are any query parameters for filtering
+        if request.args:
+            try:
+                filters = helpers.extract_item_filters(request.args)
+                user_items = Shopcart.find_by_user_id_with_filter(
+                    user_id=user_id, filters=filters
+                )
+            except ValueError as ve:
+                return jsonify({"error": str(ve)}), status.HTTP_400_BAD_REQUEST
+        else:
+            user_items = Shopcart.find_by_user_id(user_id=user_id)
 
         if not user_items:
             return abort(

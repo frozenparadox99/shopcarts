@@ -303,6 +303,70 @@ class Shopcart(db.Model):
         ).all()
 
     @classmethod
+    def find_by_user_id_with_filter(cls, user_id, filters=None):
+        """Finds items for a user with optional filters
+
+        Args:
+            user_id (int): The user ID to search for
+            filters (dict, optional): Optional filters to apply
+
+        Returns:
+            list: Items matching the user_id and filters
+        """
+        logger.info("Finding items for user_id %s with filters %s", user_id, filters)
+        query = cls.query.filter_by(user_id=user_id)
+
+        if not filters:
+            return query.all()
+
+        # Apply all filter conditions
+        filter_conditions = cls._build_filter_conditions(filters)
+        return query.filter(*filter_conditions).all()
+
+    @classmethod
+    def _build_filter_conditions(cls, filters):
+        """Creates filter conditions from filter dict
+
+        This is a private helper method to reduce complexity
+        """
+        conditions = []
+
+        # Dictionary mapping field types to conversion functions
+        type_converters = {
+            "price": float,
+            "quantity": int,
+            "item_id": int,
+            "created_at": datetime.fromisoformat,
+            "last_updated": datetime.fromisoformat,
+        }
+
+        for field, condition in filters.items():
+            model_attr = getattr(cls, field)
+            operator = condition["operator"]
+            value = condition["value"]
+
+            # Convert value if needed
+            if field in type_converters:
+                try:
+                    value = type_converters[field](value)
+                except (ValueError, TypeError) as exc:
+                    raise ValueError(f"Invalid value for {field}: {value}") from exc
+
+            # Map operators to conditions
+            if operator == "eq":
+                conditions.append(model_attr == value)
+            elif operator == "lt":
+                conditions.append(model_attr < value)
+            elif operator == "lte":
+                conditions.append(model_attr <= value)
+            elif operator == "gt":
+                conditions.append(model_attr > value)
+            elif operator == "gte":
+                conditions.append(model_attr >= value)
+
+        return conditions
+
+    @classmethod
     def finalize_cart(cls, user_id):
         """Finalizes the cart for the given user_id"""
         items = cls.find_by_user_id(user_id)
