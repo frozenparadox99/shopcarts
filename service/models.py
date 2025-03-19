@@ -397,7 +397,6 @@ class Shopcart(db.Model):
 
         query = cls.query
 
-        # ✅ Apply range-based filtering (same as find_by_ranges)
         if range_filters:
             query = query.filter(
                 cls.price >= range_filters.get("min_price", 0),
@@ -412,7 +411,6 @@ class Shopcart(db.Model):
                 <= range_filters.get("max_update", datetime(3000, 1, 1)),
             )
 
-        # ✅ Apply attribute-based filtering (lt, gt, gte, in)
         if attribute_filters:
             filter_conditions = cls._build_filter_conditions(attribute_filters)
             query = query.filter(*filter_conditions)
