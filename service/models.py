@@ -325,49 +325,61 @@ class Shopcart(db.Model):
 
     @classmethod
     def _build_filter_conditions(cls, filters):
-        """Creates filter conditions from filter dict"""
+        """Creates filter conditions from filter dict
 
+        This is a private helper method to reduce complexity.
+        """
         conditions = []
+
+        # Dictionary mapping field types to conversion functions
         type_converters = {
             "price": float,
             "quantity": int,
             "user_id": int,
+            "user_uid": str,  # Added user_uid as a string field
             "item_id": int,
             "created_at": datetime.fromisoformat,
             "last_updated": datetime.fromisoformat,
         }
 
-        operator_map = {
-            "eq": lambda attr, val: attr == val,
-            "lt": lambda attr, val: attr < val,
-            "lte": lambda attr, val: attr <= val,
-            "gt": lambda attr, val: attr > val,
-            "gte": lambda attr, val: attr >= val,
-            "in": lambda attr, val: attr.in_(val),
-        }
-
-        def convert_value(field, value):
-            """Helper function to apply type conversion."""
-            if field in type_converters:
-                try:
-                    return (
-                        [type_converters[field](v) for v in value]
-                        if isinstance(value, list)
-                        else type_converters[field](value)
-                    )
-                except (ValueError, TypeError) as exc:
-                    raise ValueError(f"Invalid value for {field}: {value}") from exc
-            return value
-
         for field, condition in filters.items():
             model_attr = getattr(cls, field)
             operator = condition["operator"]
-            value = convert_value(field, condition["value"])
+            value = condition["value"]
 
-            if operator in operator_map:
-                conditions.append(operator_map[operator](model_attr, value))
+            # Convert value if needed (handling lists properly)
+            if field in type_converters:
+                try:
+                    if isinstance(value, list):  # Convert each element in the list
+                        value = [type_converters[field](v) for v in value]
+                    else:
+                        value = type_converters[field](value)
+                except (ValueError, TypeError) as exc:
+                    raise ValueError(f"Invalid value for {field}: {value}") from exc
 
-        return conditions  # Returns a list of conditions (instead of using `and_`)
+            # Switch-case like structure for operator mapping
+            match operator:
+                case "eq":
+                    conditions.append(model_attr == value)
+                case "lt":
+                    conditions.append(model_attr < value)
+                case "lte":
+                    conditions.append(model_attr <= value)
+                case "gt":
+                    conditions.append(model_attr > value)
+                case "gte":
+                    conditions.append(model_attr >= value)
+                case "in":
+                    if isinstance(value, list):
+                        conditions.append(model_attr.in_(value))
+                    else:
+                        raise ValueError(
+                            f"Invalid 'in' operator value for {field}: must be a list"
+                        )
+                case _:
+                    raise ValueError(f"Unsupported operator: {operator}")
+
+        return conditions
 
     @classmethod
     def finalize_cart(cls, user_id):
@@ -396,23 +408,36 @@ class Shopcart(db.Model):
         logger.info("Finding all shopcart items with filters")
 
         query = cls.query
+        range_filters = range_filters or {}
 
-        if range_filters:
+        print("\n🔍 DEBUG: Received range_filters:", range_filters)
+
+        if "min_price" in range_filters or "max_price" in range_filters:
+            min_price = range_filters.get("min_price", 0)
+            max_price = range_filters.get("max_price", math.inf)
+            query = query.filter(cls.price >= min_price, cls.price <= max_price)
+
+        if "min_qty" in range_filters or "max_qty" in range_filters:
+            min_qty = range_filters.get("min_qty", 0)
+            max_qty = range_filters.get("max_qty", math.inf)
+            query = query.filter(cls.quantity >= min_qty, cls.quantity <= max_qty)
+
+        if "min_date" in range_filters or "max_date" in range_filters:
+            min_date = range_filters.get("min_date", datetime(1970, 1, 1))
+            max_date = range_filters.get("max_date", datetime(3000, 1, 1))
+            query = query.filter(cls.created_at >= min_date, cls.created_at <= max_date)
+
+        if "min_update" in range_filters or "max_update" in range_filters:
+            min_update = range_filters.get("min_update", datetime(1970, 1, 1))
+            max_update = range_filters.get("max_update", datetime(3000, 1, 1))
             query = query.filter(
-                cls.price >= range_filters.get("min_price", 0),
-                cls.price <= range_filters.get("max_price", math.inf),
-                cls.quantity >= range_filters.get("min_qty", 0),
-                cls.quantity <= range_filters.get("max_qty", math.inf),
-                cls.created_at >= range_filters.get("min_date", datetime(1970, 1, 1)),
-                cls.created_at <= range_filters.get("max_date", datetime(3000, 1, 1)),
-                cls.last_updated
-                >= range_filters.get("min_update", datetime(1970, 1, 1)),
-                cls.last_updated
-                <= range_filters.get("max_update", datetime(3000, 1, 1)),
+                cls.last_updated >= min_update, cls.last_updated <= max_update
             )
 
         if attribute_filters:
             filter_conditions = cls._build_filter_conditions(attribute_filters)
             query = query.filter(*filter_conditions)
 
-        return query.all()
+        results = query.all()
+
+        return results

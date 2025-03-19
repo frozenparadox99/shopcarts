@@ -134,8 +134,8 @@ def parse_range_param(param_name, cast_func, date_format=None):
 
     try:
         if date_format:
-            min_val = datetime.strptime(parts[0], date_format)
-            max_val = datetime.strptime(parts[1], date_format)
+            min_val = datetime.strptime(parts[0], "%Y-%m-%d")  # Fixed format
+            max_val = datetime.strptime(parts[1], "%Y-%m-%d")
         else:
             min_val = cast_func(parts[0])
             max_val = cast_func(parts[1])
@@ -154,8 +154,8 @@ def extract_filters():
     ranges = [
         ("range_price", "min_price", "max_price", float, None),
         ("range_qty", "min_qty", "max_qty", int, None),
-        ("range_created_at", "min_date", "max_date", None, "%d-%m-%Y"),
-        ("range_last_updated", "min_update", "max_update", None, "%d-%m-%Y"),
+        ("range_created_at", "min_date", "max_date", None, "%Y-%m-%d"),
+        ("range_last_updated", "min_update", "max_update", None, "%Y-%m-%d"),
     ]
 
     for param, min_key, max_key, cast_type, date_format in ranges:
@@ -166,10 +166,15 @@ def extract_filters():
         else:
             min_val, max_val = parse_range_param(param, cast_type)
 
+        if min_val is not None or max_val is not None:
+            print(f"🔍 DEBUG: Extracted {param}: min={min_val}, max={max_val}")
+
         if min_val is not None:
             filters[min_key] = min_val
+        if max_val is not None:
             filters[max_key] = max_val
 
+    print(f"✅ DEBUG: Final Extracted Filters: {filters}")
     return filters
 
 
