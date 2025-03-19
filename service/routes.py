@@ -199,6 +199,6 @@ def checkout(user_id):
     except DataValidationError as e:
         return jsonify({"error": str(e)}), 400
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         app.logger.error("Checkout error for user %s: %s", user_id, e)
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
