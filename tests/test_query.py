@@ -22,6 +22,7 @@ TestYourResourceModel API Service Test Suite
 # pylint: disable=duplicate-code
 from service.common import status
 from .test_routes import TestShopcartService
+from service.common.helpers import parse_range_param, extract_item_filters
 
 ######################################################################
 #  T E S T   C A S E S

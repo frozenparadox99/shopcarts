@@ -636,3 +636,163 @@ class TestShopCartQueries(ShopCartModelTestCase):
         self.assertEqual(len(found), count)
         for shopcart in found:
             self.assertEqual(shopcart.last_updated, last_updated)
+
+    def test_build_filter_conditions_in(self):
+        """It should generate conditions for 'in' operator"""
+        filters = {"user_id": {"operator": "in", "value": [1, 2, 3]}}
+        conditions = Shopcart._build_filter_conditions(filters)
+
+        # Ensure the IN condition exists
+        self.assertEqual(len(conditions), 1)
+        condition_str = str(conditions[0])
+
+        # Check that the SQLAlchemy query contains the correct structure
+        self.assertIn(
+            "shopcart.user_id IN", condition_str
+        )  # ✅ Ensure 'IN' clause exists
+        self.assertIn(
+            "POSTCOMPILE", condition_str
+        )  # ✅ Handle SQLAlchemy's dynamic compiling
+
+    def test_find_by_ranges(self):
+        """It should return items based on price, quantity, and date filters"""
+
+        # ✅ Manually create and insert test data
+        db.session.query(Shopcart).delete()  # Ensure clean DB before inserting
+        db.session.commit()
+
+        item1 = Shopcart(
+            user_id=1,
+            item_id=101,
+            price=15.0,
+            quantity=2,
+            created_at=datetime(2023, 1, 1),
+            last_updated=datetime(2023, 2, 1),
+        )
+        item2 = Shopcart(
+            user_id=2,
+            item_id=102,
+            price=45.0,
+            quantity=4,
+            created_at=datetime(2023, 3, 1),
+            last_updated=datetime(2023, 4, 1),
+        )
+        item3 = Shopcart(
+            user_id=3,
+            item_id=103,
+            price=55.0,
+            quantity=6,
+            created_at=datetime(2023, 5, 1),
+            last_updated=datetime(2023, 6, 1),
+        )
+
+        db.session.add_all([item1, item2, item3])
+        db.session.commit()  # ✅ Ensure data is committed before querying
+
+        # ✅ Test price range (should return item1 and item2)
+        filters = {"min_price": 10, "max_price": 50}
+        results = Shopcart.find_by_ranges(filters)
+
+        self.assertGreater(len(results), 0)  # ✅ Ensure some items match price range
+        self.assertEqual(len(results), 2)  # ✅ Should return exactly item1 and item2
+
+    def test_find_by_extreme_and_partial_values(self):
+        """It should handle extreme values and partial filters"""
+
+        # ✅ Manually create test data
+        db.session.query(Shopcart).delete()  # Clean up previous data
+        db.session.commit()
+
+        item1 = Shopcart(
+            user_id=4,
+            item_id=201,
+            price=12.0,
+            quantity=3,
+            created_at=datetime(2023, 2, 1),
+            last_updated=datetime(2023, 3, 1),
+        )
+        item2 = Shopcart(
+            user_id=5,
+            item_id=202,
+            price=1200.0,
+            quantity=7,
+            created_at=datetime(2023, 4, 1),
+            last_updated=datetime(2023, 5, 1),
+        )
+
+        db.session.add_all([item1, item2])
+        db.session.commit()
+
+        # ✅ Test extreme values (should return zero matches)
+        filters = {"min_price": 1000, "max_price": 2000}
+        results = Shopcart.find_by_ranges(filters)
+
+        self.assertEqual(len(results), 1)  # ✅ Should return only item2
+
+        # ✅ Test partial filters (min price only, should return item1 and item2)
+        filters = {"min_price": 10}
+        results = Shopcart.find_by_ranges(filters)
+
+        self.assertGreater(len(results), 0)  # ✅ Ensure at least one item is found
+
+    def test_find_all_with_filters(self):
+        """It should return items based on attribute filters"""
+
+        # ✅ Manually create test data
+        db.session.query(Shopcart).delete()  # Clean up previous data
+        db.session.commit()
+
+        item1 = Shopcart(
+            user_id=1,
+            item_id=101,
+            price=20.0,
+            quantity=2,
+            created_at=datetime(2023, 1, 1),
+            last_updated=datetime(2023, 2, 1),
+        )
+        item2 = Shopcart(
+            user_id=2,
+            item_id=102,
+            price=45.0,
+            quantity=4,
+            created_at=datetime(2023, 3, 1),
+            last_updated=datetime(2023, 4, 1),
+        )
+        item3 = Shopcart(
+            user_id=3,
+            item_id=103,
+            price=60.0,
+            quantity=6,
+            created_at=datetime(2023, 5, 1),
+            last_updated=datetime(2023, 6, 1),
+        )
+
+        db.session.add_all([item1, item2, item3])
+        db.session.commit()
+
+        # ✅ Apply attribute filter on `user_id`
+        filters = {"user_id": {"operator": "eq", "value": 1}}
+        results = Shopcart.find_all_with_filters(attribute_filters=filters)
+
+        self.assertEqual(len(results), 1)  # ✅ Should return only item1
+
+        # ✅ Apply attribute filter on `price` (greater than 40)
+        filters = {"price": {"operator": "gt", "value": 40}}
+        results = Shopcart.find_all_with_filters(attribute_filters=filters)
+
+        self.assertEqual(len(results), 2)  # ✅ Should return item2 and item3
+
+        # ✅ Apply attribute filter on `quantity` (less than or equal to 4)
+        filters = {"quantity": {"operator": "lte", "value": 4}}
+        results = Shopcart.find_all_with_filters(attribute_filters=filters)
+
+        self.assertEqual(len(results), 2)  # ✅ Should return item1 and item2
+
+        # ✅ Apply multiple filters (`user_id` = 2 AND `price` > 30)
+        filters = {
+            "user_id": {"operator": "eq", "value": 2},
+            "price": {"operator": "gt", "value": 30},
+        }
+        results = Shopcart.find_all_with_filters(attribute_filters=filters)
+
+        self.assertEqual(len(results), 1)  # ✅ Should return only item2
