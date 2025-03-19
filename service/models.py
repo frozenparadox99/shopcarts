@@ -325,16 +325,13 @@ class Shopcart(db.Model):
 
     @classmethod
     def _build_filter_conditions(cls, filters):
-        """Creates filter conditions from filter dict
+        """Creates filter conditions from filter dict"""
 
-        This is a private helper method to reduce complexity
-        """
         conditions = []
-
-        # Dictionary mapping field types to conversion functions
         type_converters = {
             "price": float,
             "quantity": int,
+            "user_id": int,
             "item_id": int,
             "created_at": datetime.fromisoformat,
             "last_updated": datetime.fromisoformat,
@@ -348,11 +345,14 @@ class Shopcart(db.Model):
             # Convert value if needed
             if field in type_converters:
                 try:
-                    value = type_converters[field](value)
+                    if isinstance(value, list):  # Convert lists properly
+                        value = [type_converters[field](v) for v in value]
+                    else:
+                        value = type_converters[field](value)
                 except (ValueError, TypeError) as exc:
                     raise ValueError(f"Invalid value for {field}: {value}") from exc
 
-            # Map operators to conditions
+            # Apply filtering operators
             if operator == "eq":
                 conditions.append(model_attr == value)
             elif operator == "lt":
@@ -363,6 +363,10 @@ class Shopcart(db.Model):
                 conditions.append(model_attr > value)
             elif operator == "gte":
                 conditions.append(model_attr >= value)
+            elif operator == "in":
+                conditions.append(
+                    model_attr.in_(value)
+                )  # ✅ Handle lists for "IN" queries
 
         return conditions
 
@@ -386,3 +390,32 @@ class Shopcart(db.Model):
             item.delete()
 
         return total_price
+
+    @classmethod
+    def find_all_with_filters(cls, range_filters=None, attribute_filters=None):
+        """Finds all shopcart items applying both range and attribute filters"""
+        logger.info("Finding all shopcart items with filters")
+
+        query = cls.query
+
+        # ✅ Apply range-based filtering (same as find_by_ranges)
+        if range_filters:
+            query = query.filter(
+                cls.price >= range_filters.get("min_price", 0),
+                cls.price <= range_filters.get("max_price", math.inf),
+                cls.quantity >= range_filters.get("min_qty", 0),
+                cls.quantity <= range_filters.get("max_qty", math.inf),
+                cls.created_at >= range_filters.get("min_date", datetime(1970, 1, 1)),
+                cls.created_at <= range_filters.get("max_date", datetime(3000, 1, 1)),
+                cls.last_updated
+                >= range_filters.get("min_update", datetime(1970, 1, 1)),
+                cls.last_updated
+                <= range_filters.get("max_update", datetime(3000, 1, 1)),
+            )
+
+        # ✅ Apply attribute-based filtering (lt, gt, gte, in)
+        if attribute_filters:
+            filter_conditions = cls._build_filter_conditions(attribute_filters)
+            query = query.filter(*filter_conditions)
+
+        return query.all()

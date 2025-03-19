@@ -199,15 +199,10 @@ def parse_operator_value(value_string):
 
 
 def extract_item_filters(request_args):
-    """Extract filter parameters from request arguments.
+    """Extract filter parameters including direct attributes and lists."""
 
-    Args:
-        request_args: The request arguments from Flask's request.args
-
-    Returns:
-        dict: Filter parameters with their operators and values
-    """
     filter_fields = [
+        "user_id",
         "quantity",
         "price",
         "created_at",
@@ -219,10 +214,17 @@ def extract_item_filters(request_args):
 
     for field in filter_fields:
         if field in request_args:
-            try:
-                operator, value = parse_operator_value(request_args[field])
-                filters[field] = {"operator": operator, "value": value}
-            except ValueError as e:
-                raise ValueError(f"Error parsing filter for {field}: {str(e)}")
+            value_string = request_args[field]
+
+            # Check if it's a list (comma-separated values)
+            if "," in value_string:
+                values = value_string.split(",")
+                filters[field] = {"operator": "in", "value": values}
+            else:
+                try:
+                    operator, value = parse_operator_value(value_string)
+                    filters[field] = {"operator": operator, "value": value}
+                except ValueError as e:
+                    raise ValueError(f"Error parsing filter for {field}: {str(e)}")
 
     return filters
