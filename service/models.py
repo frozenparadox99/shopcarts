@@ -337,38 +337,37 @@ class Shopcart(db.Model):
             "last_updated": datetime.fromisoformat,
         }
 
+        operator_map = {
+            "eq": lambda attr, val: attr == val,
+            "lt": lambda attr, val: attr < val,
+            "lte": lambda attr, val: attr <= val,
+            "gt": lambda attr, val: attr > val,
+            "gte": lambda attr, val: attr >= val,
+            "in": lambda attr, val: attr.in_(val),
+        }
+
+        def convert_value(field, value):
+            """Helper function to apply type conversion."""
+            if field in type_converters:
+                try:
+                    return (
+                        [type_converters[field](v) for v in value]
+                        if isinstance(value, list)
+                        else type_converters[field](value)
+                    )
+                except (ValueError, TypeError) as exc:
+                    raise ValueError(f"Invalid value for {field}: {value}") from exc
+            return value
+
         for field, condition in filters.items():
             model_attr = getattr(cls, field)
             operator = condition["operator"]
-            value = condition["value"]
+            value = convert_value(field, condition["value"])
 
-            # Convert value if needed
-            if field in type_converters:
-                try:
-                    if isinstance(value, list):  # Convert lists properly
-                        value = [type_converters[field](v) for v in value]
-                    else:
-                        value = type_converters[field](value)
-                except (ValueError, TypeError) as exc:
-                    raise ValueError(f"Invalid value for {field}: {value}") from exc
+            if operator in operator_map:
+                conditions.append(operator_map[operator](model_attr, value))
 
-            # Apply filtering operators
-            if operator == "eq":
-                conditions.append(model_attr == value)
-            elif operator == "lt":
-                conditions.append(model_attr < value)
-            elif operator == "lte":
-                conditions.append(model_attr <= value)
-            elif operator == "gt":
-                conditions.append(model_attr > value)
-            elif operator == "gte":
-                conditions.append(model_attr >= value)
-            elif operator == "in":
-                conditions.append(
-                    model_attr.in_(value)
-                )  # ✅ Handle lists for "IN" queries
-
-        return conditions
+        return conditions  # Returns a list of conditions (instead of using `and_`)
 
     @classmethod
     def finalize_cart(cls, user_id):
