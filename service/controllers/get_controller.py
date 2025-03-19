@@ -3,42 +3,46 @@ GET Controller logic for Shopcart Service
 """
 
 from werkzeug.exceptions import HTTPException
-from flask import jsonify, abort
+from flask import request, jsonify, abort
 from flask import current_app as app
 from service.models import Shopcart
-from service.common import status
+from service.common import status, helpers
 
 
 def get_shopcarts_controller():
     """List all shopcarts grouped by user"""
-    app.logger.info("Request to list shopcarts")
 
-    try:
-        # Initialize an empty list to store unique user shopcarts
-        shopcarts_list = []
+    # Initialize an empty list to store unique user shopcarts
+    shopcarts_list = []
 
+    if not request.args:
+        app.logger.info("Request to list shopcarts")
         # Get all shopcarts grouped by user_id
         all_items = Shopcart.all()
 
-        # Group items by user_id
-        user_items = {}
-        for item in all_items:
-            if item.user_id not in user_items:
-                user_items[item.user_id] = []
-            user_items[item.user_id].append(item.serialize())
+    else:
+        app.logger.info("Request to list shopcarts with query range")
+        filters = {}
+        try:
+            filters = helpers.extract_filters()
+            all_items = Shopcart.find_by_ranges(filters=filters)
+        except ValueError as ve:
+            return jsonify({"error": str(ve)}), 400
 
-        # Create the response list
-        for user_id, items in user_items.items():
-            shopcarts_list.append({"user_id": user_id, "items": items})
+        all_items = Shopcart.find_by_ranges(filters=filters)
 
-        return jsonify(shopcarts_list), status.HTTP_200_OK
+    # Group items by user_id
+    user_items = {}
+    for item in all_items:
+        if item.user_id not in user_items:
+            user_items[item.user_id] = []
+        user_items[item.user_id].append(item.serialize())
 
-    except Exception as e:  # pylint: disable=broad-except
-        app.logger.error(f"Error listing shopcarts: {str(e)}")
-        return (
-            jsonify({"error": f"Internal server error: {str(e)}"}),
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+    # Create the response list
+    for user_id, items in user_items.items():
+        shopcarts_list.append({"user_id": user_id, "items": items})
+
+    return jsonify(shopcarts_list), status.HTTP_200_OK
 
 
 def get_user_shopcart_controller(user_id):
