@@ -11,7 +11,7 @@ from service.common.helpers import (
     validate_stock_and_limits,
     update_or_create_cart_item,
 )
-from service.models import Shopcart
+from service.models import Shopcart, DataValidationError
 
 
 def add_to_or_create_cart_controller(user_id):
@@ -101,3 +101,25 @@ def add_product_to_cart_controller(user_id):
         status.HTTP_201_CREATED,
         {"Location": location_url},
     )
+
+
+def checkout_controller(user_id):
+    """Finalize a user's cart and proceed with payment."""
+    try:
+        total_price = Shopcart.finalize_cart(user_id)
+        return (
+            jsonify(
+                {
+                    "message": f"Cart {user_id} checked out successfully",
+                    "total_price": total_price,
+                }
+            ),
+            200,
+        )
+
+    except DataValidationError as e:
+        return jsonify({"error": str(e)}), 400
+
+    except Exception as e:  # pylint: disable=broad-except
+        app.logger.error("Checkout error for user %s: %s", user_id, e)
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
