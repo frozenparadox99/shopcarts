@@ -171,3 +171,58 @@ def extract_filters():
             filters[max_key] = max_val
 
     return filters
+
+
+def parse_operator_value(value_string):
+    """Parse a value string with optional operator prefixes.
+
+    Format: ~operator~value where operator can be lt, lte, gt, or gte
+    If no operator is present, equality is assumed.
+
+    Returns:
+        tuple: (operator, value) where operator is one of eq, lt, lte, gt, gte
+    """
+    if not value_string.startswith("~"):
+        return "eq", value_string
+
+    parts = value_string.split("~")
+    if len(parts) < 3:
+        raise ValueError(f"Invalid operator format: {value_string}")
+
+    operator = parts[1].lower()
+    value = "~".join(parts[2:])
+
+    if operator not in ["lt", "lte", "gt", "gte"]:
+        raise ValueError(f"Unsupported operator: {operator}")
+
+    return operator, value
+
+
+def extract_item_filters(request_args):
+    """Extract filter parameters from request arguments.
+
+    Args:
+        request_args: The request arguments from Flask's request.args
+
+    Returns:
+        dict: Filter parameters with their operators and values
+    """
+    filter_fields = [
+        "quantity",
+        "price",
+        "created_at",
+        "last_updated",
+        "description",
+        "item_id",
+    ]
+    filters = {}
+
+    for field in filter_fields:
+        if field in request_args:
+            try:
+                operator, value = parse_operator_value(request_args[field])
+                filters[field] = {"operator": operator, "value": value}
+            except ValueError as e:
+                raise ValueError(f"Error parsing filter for {field}: {str(e)}")
+
+    return filters
