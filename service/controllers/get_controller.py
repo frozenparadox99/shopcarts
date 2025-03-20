@@ -29,8 +29,6 @@ def get_shopcarts_controller():
         except ValueError as ve:
             return jsonify({"error": str(ve)}), status.HTTP_400_BAD_REQUEST
 
-        all_items = Shopcart.find_by_ranges(filters=filters)
-
     # Group items by user_id
     user_items = {}
     for item in all_items:
