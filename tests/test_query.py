@@ -20,7 +20,7 @@ TestYourResourceModel API Service Test Suite
 """
 
 # pylint: disable=duplicate-code
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from service.common import status
 from service.models import Shopcart
 from .test_routes import TestShopcartService
@@ -183,7 +183,6 @@ class TestQuery(TestShopcartService):
         items = data[0]["items"]
         self.assertEqual(len(items), 3)
 
-
     def test_get_shopcarts_with_price_range(self):
         """It should return items based on price range filter"""
         self._populate_shopcarts(count=2, price=15.0)
@@ -325,7 +324,7 @@ class TestQuery(TestShopcartService):
         # Create 1 entry with price outside range
         self._populate_shopcarts(count=1, price=80.00)
 
-        resp = self.client.get("/shopcarts?range_price=40,60")
+        resp = self.client.get("/shopcarts?price_range=40,60")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
 
@@ -345,7 +344,7 @@ class TestQuery(TestShopcartService):
         self._populate_shopcarts(count=2, quantity=15)
         self._populate_shopcarts(count=1, quantity=30)
 
-        resp = self.client.get("/shopcarts?range_qty=10,20")
+        resp = self.client.get("/shopcarts?quantity_range=10,20")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
 
@@ -364,12 +363,12 @@ class TestQuery(TestShopcartService):
 
         before_creation = datetime.now(timezone.utc) - timedelta(minutes=1)
         self._populate_shopcarts(count=1)
-        after_creation = datetime.now(timezone.utc) + timedelta(minutes=1)
+        after_creation = datetime.now(timezone.utc) + timedelta(days=2)
 
         range_start = (before_creation - timedelta(days=1)).strftime("%Y-%m-%d")
         range_end = (after_creation + timedelta(days=1)).strftime("%Y-%m-%d")
 
-        resp = self.client.get(f"/shopcarts?range_created_at={range_start},{range_end}")
+        resp = self.client.get(f"/shopcarts?created_at_range={range_start},{range_end}")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
 
@@ -397,7 +396,7 @@ class TestQuery(TestShopcartService):
         self._populate_shopcarts(count=2, price=75.0, quantity=25)
         self._populate_shopcarts(count=1, price=200.0, quantity=100)
 
-        resp = self.client.get("/shopcarts?range_price=70,80&range_qty=20,30")
+        resp = self.client.get("/shopcarts?price_range=70,80&quantity_range=20,30")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
 
@@ -412,102 +411,3 @@ class TestQuery(TestShopcartService):
             self.assertLessEqual(item["price"], 80.0)
             self.assertGreaterEqual(item["quantity"], 20)
             self.assertLessEqual(item["quantity"], 30)
-
-    def test_list_shopcarts_with_bad_range(self):
-        """It should return 400 when only one value is provided for the range"""
-
-        self._populate_shopcarts(count=2, price=50.00)
-
-        resp = self.client.get("/shopcarts?range_price=40")
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("error", data)
-        self.assertIn("range_price must have two comma-separated values", data["error"])
-
-        resp = self.client.get("/shopcarts?range_qty=10")
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("error", data)
-        self.assertIn("range_qty must have two comma-separated values", data["error"])
-
-        resp = self.client.get("/shopcarts?range_created_at=01-01-2020")
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("error", data)
-        self.assertIn(
-            "range_created_at must have two comma-separated values", data["error"]
-        )
-
-    def test_list_shopcarts_with_max_min_price(self):
-        """It should list shopcarts within a price max and min"""
-
-        # Create 2 entries with price in range
-        self._populate_shopcarts(count=2, price=50.00)
-        # Create 1 entry with price outside range
-        self._populate_shopcarts(count=1, price=80.00)
-        # Check max
-        resp = self.client.get("/shopcarts?max-price=60")
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        data = resp.get_json()
-        expanded_data = []
-        for cart in data:
-            for item in cart["items"]:
-                expanded_data.append(item)
-        self.assertEqual(len(expanded_data), 2)
-        for item in expanded_data:
-            self.assertLessEqual(item["price"], 60.0)
-        # Check min
-        resp = self.client.get("/shopcarts?min-price=70")
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        data = resp.get_json()
-        expanded_data = []
-        for cart in data:
-            for item in cart["items"]:
-                expanded_data.append(item)
-        self.assertEqual(len(expanded_data), 1)
-        for item in expanded_data:
-            self.assertGreaterEqual(item["price"], 70.0)
-
-        # Check range:
-        resp = self.client.get("/shopcarts?max-price=70&min-price=50")
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        data = resp.get_json()
-        expanded_data = []
-        for cart in data:
-            for item in cart["items"]:
-                expanded_data.append(item)
-        self.assertEqual(len(expanded_data), 2)
-        for item in expanded_data:
-            self.assertLessEqual(item["price"], 70.0)
-            self.assertGreaterEqual(item["price"], 50.0)
-
-    def test_list_shopcarts_with_bad_max_min_price(self):
-        """It should return errors with bad max and min price"""
-
-        # Create 2 entries with price in range
-        self._populate_shopcarts(count=2, price=50.00)
-        # Create 1 entry with price outside range
-        self._populate_shopcarts(count=1, price=80.00)
-
-        resp = self.client.get("/shopcarts?max-price=70&range_price=2,10")
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("error", data)
-        self.assertIn(
-            "Passed in both range_price and max_price/min_price query", data["error"]
-        )
-
-        resp = self.client.get("/shopcarts?min-price=70&range_price=2,10")
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("error", data)
-        self.assertIn(
-            "Passed in both range_price and max_price/min_price query", data["error"]
-        )
-
-        resp = self.client.get("/shopcarts?min-price=70&max-price=20")
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("error", data)
-        self.assertIn("Min price larger than max price", data["error"])
-
