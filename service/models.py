@@ -336,7 +336,6 @@ class Shopcart(db.Model):
             "price": float,
             "quantity": int,
             "user_id": int,
-            "user_uid": str,
             "item_id": int,
             "created_at": datetime.fromisoformat,
             "last_updated": datetime.fromisoformat,
