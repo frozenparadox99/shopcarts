@@ -20,7 +20,6 @@ TestYourResourceModel API Service Test Suite
 """
 
 # pylint: disable=duplicate-code
-from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 from service.common import status
 from .test_routes import TestShopcartService
@@ -132,6 +131,7 @@ class TestShopcartGet(TestShopcartService):
         data = resp.get_json()
         self.assertEqual(data, [])
 
+
     def test_list_shopcarts_with_price_range(self):
         """It should list shopcarts within a price range"""
 
@@ -203,6 +203,7 @@ class TestShopcartGet(TestShopcartService):
         last_updated = created_at.replace(tzinfo=timezone.utc)
         self.assertGreaterEqual(last_updated, before_creation)
         self.assertLessEqual(last_updated, after_creation)
+
 
     def test_read_user_shopcart(self):
         """It should get the shopcarts"""
