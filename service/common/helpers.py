@@ -2,7 +2,7 @@
 Helper functions for services
 """
 
-from flask import request, jsonify
+from flask import jsonify
 from service.common import status
 from service.models import Shopcart
 
