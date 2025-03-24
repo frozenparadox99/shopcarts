@@ -189,17 +189,13 @@ class TestQuery(TestShopcartService):
         self._populate_shopcarts(count=1, price=45.0)
         self._populate_shopcarts(count=1, price=55.0)  # This should NOT be included
 
-        # ✅ Print the test request URL
-        url = "/shopcarts?range_price=10,50"
-        print(f"\n🔍 DEBUG: Sending request: {url}")
+        url = "/shopcarts?price_range=10,50"
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
         data = resp.get_json()
-        print("\n🔍 DEBUG: Full Response from API:", data)
 
-        # ✅ Ensure that only valid items are returned
         invalid_items = [
             item
             for shopcart in data
@@ -214,24 +210,20 @@ class TestQuery(TestShopcartService):
     def test_get_shopcarts_with_extreme_and_partial_values(self):
         """It should handle extreme values and partial filters correctly"""
 
-        # ✅ Populate shopcarts with extreme price values
         self._populate_shopcarts(count=1, price=12.0)
         self._populate_shopcarts(count=1, price=1200.0)
 
-        # ✅ Query with extreme values (should return only one item)
-        url = "/shopcarts?range_price=1000,2000"
-        print(f"\n🔍 DEBUG: Sending request: {url}")
+        url = "/shopcarts?price_range=1000,2000"
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
         data = resp.get_json()
-        print("\n🔍 DEBUG: Full Response from API:", data)
 
         self.assertEqual(len(data), 1)
         self.assertEqual(len(data[0]["items"]), 1)
 
-        url = "/shopcarts?range_price=10,999999"
+        url = "/shopcarts?price_range=10,999999"
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)

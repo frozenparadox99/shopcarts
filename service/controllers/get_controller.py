@@ -22,16 +22,10 @@ def get_shopcarts_controller():
         app.logger.info("Request to list shopcarts with filters")
 
         try:
-            # Extract filters for range-based and attribute-based filtering
-            range_filters = helpers.extract_filters()
-            attribute_filters = helpers.extract_item_filters(request.args)
-
-            # Apply filters to the query
-            all_items = Shopcart.find_all_with_filters(range_filters, attribute_filters)
+            filters = helpers.extract_item_filters(request.args)
+            all_items = Shopcart.find_all_with_filter(filters=filters)
         except ValueError as ve:
             return jsonify({"error": str(ve)}), status.HTTP_400_BAD_REQUEST
-
-        # all_items = Shopcart.find_by_ranges(filters=filters)
 
     # Group items by user_id
     user_items = {}

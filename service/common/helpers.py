@@ -123,61 +123,6 @@ def update_cart_item_helper(user_id, item_id, quantity):
         cart_item.update()
 
 
-def parse_range_param(param_name, cast_func, date_format=None):
-    value = request.args.get(param_name)
-    if not value:
-        return None, None
-
-    parts = value.split(",")
-    if len(parts) != 2:
-        raise ValueError(f"{param_name} must have two comma-separated values")
-
-    try:
-        if date_format:
-            min_val = datetime.strptime(parts[0], "%Y-%m-%d")  # Fixed format
-            max_val = datetime.strptime(parts[1], "%Y-%m-%d")
-        else:
-            min_val = cast_func(parts[0])
-            max_val = cast_func(parts[1])
-    except Exception:
-        raise ValueError(f"{param_name} values are invalid or malformed")
-
-    if min_val > max_val:
-        raise ValueError(f"min value cannot be greater than max value in {param_name}")
-
-    return min_val, max_val
-
-
-def extract_filters():
-    """Extract range filters from request arguments."""
-    filters = {}
-    ranges = [
-        ("range_price", "min_price", "max_price", float, None),
-        ("range_qty", "min_qty", "max_qty", int, None),
-        ("range_created_at", "min_date", "max_date", None, "%Y-%m-%d"),
-        ("range_last_updated", "min_update", "max_update", None, "%Y-%m-%d"),
-    ]
-
-    for param, min_key, max_key, cast_type, date_format in ranges:
-        if date_format:
-            min_val, max_val = parse_range_param(
-                param, cast_type, date_format=date_format
-            )
-        else:
-            min_val, max_val = parse_range_param(param, cast_type)
-
-        if min_val is not None or max_val is not None:
-            print(f"🔍 DEBUG: Extracted {param}: min={min_val}, max={max_val}")
-
-        if min_val is not None:
-            filters[min_key] = min_val
-        if max_val is not None:
-            filters[max_key] = max_val
-
-    print(f"✅ DEBUG: Final Extracted Filters: {filters}")
-    return filters
-
-
 def parse_operator_value(value_string):
     """Parse a value string with optional operator prefixes.
 
@@ -204,7 +149,7 @@ def parse_operator_value(value_string):
 
 
 def extract_item_filters(request_args):
-    """Extract filter parameters including direct attributes and lists."""
+    """Extract filter parameters including direct attributes, ranges, and lists."""
 
     filter_fields = [
         "user_id",
@@ -218,13 +163,28 @@ def extract_item_filters(request_args):
     filters = {}
 
     for field in filter_fields:
-        if field in request_args:
+        range_key = f"{field}_range"
+
+        # Handle range filters like quantity_range=1,10
+        if range_key in request_args:
+            value_string = request_args[range_key]
+            try:
+                start, end = map(str.strip, value_string.split(","))
+                filters[field] = {"operator": "range", "value": [start, end]}
+            except ValueError:
+                raise ValueError(
+                    f"Invalid range format for {range_key}: expected start,end"
+                )
+
+        elif field in request_args:
             value_string = request_args[field]
 
-            # Check if it's a list (comma-separated values)
+            # Handle comma-separated values → "in" filter
             if "," in value_string:
-                values = value_string.split(",")
+                values = [v.strip() for v in value_string.split(",")]
                 filters[field] = {"operator": "in", "value": values}
+
+            # Handle operator-based filters like gte:5
             else:
                 try:
                     operator, value = parse_operator_value(value_string)
