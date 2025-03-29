@@ -326,8 +326,7 @@ class Shopcart(db.Model):
     @classmethod
     def _build_filter_conditions(cls, filters):
         """Creates filter conditions from filter dict
-
-        This is a private helper method to reduce complexity.
+        This is a private helper method to reduce complexity
         """
         conditions = []
 
