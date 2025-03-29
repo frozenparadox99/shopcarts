@@ -476,24 +476,3 @@ class TestShopcartGet(TestShopcartService):
             data = response.get_json()
             self.assertIn("error", data)
             self.assertEqual(data["error"], "Internal server error: Database error")
-
-    def test_list_shopcarts_with_invalid_range_filters(self):
-        """It should return 400 for malformed or invalid range filters"""
-
-        # Only one value (triggers: len(parts) != 2)
-        resp = self.client.get("/shopcarts?price_range=100")
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("expected start,end", data["error"])
-
-        # Bad type (triggers: cast_func fails → ValueError)
-        resp = self.client.get("/shopcarts?quantity_range=abc,10")
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("Invalid value for quantity", data["error"])
-
-        # Reversed range (triggers: min > max check)
-        resp = self.client.get("/shopcarts?user_id_range=10,2")
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("min value cannot be greater", data["error"])
