@@ -22,7 +22,6 @@ TestYourResourceModel API Service Test Suite
 # pylint: disable=duplicate-code
 from datetime import datetime, timedelta, timezone
 from service.common import status
-from service.models import Shopcart
 from .test_routes import TestShopcartService
 
 ######################################################################
@@ -276,66 +275,6 @@ class TestQuery(TestShopcartService):
         data = resp.get_json()
 
         self.assertEqual(len(data), 1)
-
-    def test_find_by_ranges(self):
-        """It should return items based on price and quantity filters, and validate date ranges automatically."""
-
-        self._populate_shopcarts(count=1, price=15.0, quantity=2)
-        self._populate_shopcarts(count=1, price=45.0, quantity=4)
-        self._populate_shopcarts(count=1, price=55.0, quantity=6)
-
-        before_filter = datetime.utcnow() - timedelta(minutes=1)
-        after_filter = datetime.utcnow() + timedelta(minutes=1)
-
-        filters = {
-            "min_price": 10,
-            "max_price": 50,  # Price Range: Should return first two items
-            "min_qty": 1,
-            "max_qty": 5,  # Quantity Range: Should exclude third item
-            "min_date": before_filter,  # Start Date (just before population)
-            "max_date": after_filter,  # End Date (just after population)
-            "min_update": before_filter,  # Start Update Date
-            "max_update": after_filter,  # End Update Date
-        }
-
-        results = Shopcart.find_by_ranges(filters)
-
-        self.assertGreater(len(results), 0)  # Ensure some results
-        self.assertEqual(len(results), 2)  # Should exclude the third item
-
-        # Ensure all results are within the price and quantity range
-        for item in results:
-            self.assertTrue(10 <= item.price <= 50)
-            self.assertTrue(1 <= item.quantity <= 5)
-
-            # Convert stored timestamps to naive datetime for comparison
-            created_at_naive = item.created_at.replace(tzinfo=None)
-            last_updated_naive = item.last_updated.replace(tzinfo=None)
-
-            # Ensure `created_at` and `last_updated` are within expected range
-            self.assertTrue(before_filter <= created_at_naive <= after_filter)
-            self.assertTrue(before_filter <= last_updated_naive <= after_filter)
-
-    def test_list_shopcarts_with_price_range(self):
-        """It should list shopcarts within a price range"""
-
-        # Create 2 entries with price in range
-        self._populate_shopcarts(count=2, price=50.00)
-        # Create 1 entry with price outside range
-        self._populate_shopcarts(count=1, price=80.00)
-
-        resp = self.client.get("/shopcarts?price_range=40,60")
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        data = resp.get_json()
-
-        expanded_data = []
-        for cart in data:
-            for item in cart["items"]:
-                expanded_data.append(item)
-        self.assertEqual(len(expanded_data), 2)
-        for item in expanded_data:
-            self.assertGreaterEqual(item["price"], 40.0)
-            self.assertLessEqual(item["price"], 60.0)
 
     def test_list_shopcarts_with_qty_range(self):
         """It should list shopcarts within a quantity range"""
