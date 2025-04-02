@@ -101,9 +101,6 @@ def process_cart_updates(user_id, items):
         except (KeyError, ValueError, TypeError) as e:
             raise ValueError(f"Invalid input: {e}") from e
 
-        if quantity < 0:
-            raise ValueError("Quantity cannot be negative")
-
         # Attempt to update/remove the cart item
         update_cart_item_helper(user_id, item_id, quantity)
 
