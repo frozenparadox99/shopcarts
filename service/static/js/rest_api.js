@@ -42,12 +42,12 @@ $(function () {
         });
 
         ajax.done(function(res){
-            $("#health_status").html('<span class="text-success">✓ API Online</span>');
+            $("#shopcart_health_status").html('<span class="text-success">✓ API Online</span>');
             console.log("Health check passed: " + JSON.stringify(res));
         });
 
         ajax.fail(function(){
-            $("#health_status").html('<span class="text-danger">✗ API Offline</span>');
+            $("#shopcart_health_status").html('<span class="text-danger">✗ API Offline</span>');
             console.log("Health check failed");
         });
     }

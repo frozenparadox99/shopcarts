@@ -17,6 +17,10 @@ Scenario: The server is running
     Then I should see "Shopcart RESTful Service" in the title
     And I should not see "404 Not Found"
 
+Scenario: API health check shows online
+    When I visit the "Home Page"
+    Then the API health status should be "✓ API Online"
+
 Scenario: Add an item to a user's cart via the UI
     When I visit the "Home Page"
     And I set the "User ID" to "4"
