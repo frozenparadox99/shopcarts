@@ -16,3 +16,54 @@ Scenario: The server is running
     When I visit the "Home Page"
     Then I should see "Shopcart RESTful Service" in the title
     And I should not see "404 Not Found"
+
+Scenario: Add an item to a user's cart via the UI
+    When I visit the "Home Page"
+    And I set the "User ID" to "4"
+    And I set the "Item ID" to "999"
+    And I set the "Item Description" to "Test Product"
+    And I set the "Item Price" to "49.99"
+    And I set the "Item Quantity" to "2"
+    And I press the "Create" button
+    Then I should see the message "Item successfully added to cart!"
+    When I press the "Search" button
+    Then I should see the message "Search results found!"
+    And I should see "Test Product" in the results
+    And I should see "4" in the results
+    And I should see "999" in the results
+
+Scenario: Adding to cart fails when quantity is 0
+    When I visit the "Home Page"
+    And I set the "User ID" to "6"
+    And I set the "Item ID" to "1001"
+    And I set the "Item Description" to "Zero Item"
+    And I set the "Item Price" to "12.99"
+    And I set the "Item Quantity" to "0"
+    And I press the "Create" button
+    Then I should see the message "Quantity must be greater than 0."
+
+Scenario: Add an item product to a user's cart via the UI
+    When I visit the "Home Page"
+    And I set the "User ID" to "5"
+    And I set the "Item ID" to "888"
+    And I set the "Item Description" to "Item Widget"
+    And I set the "Item Price" to "29.99"
+    And I set the "Item Quantity" to "3"
+    And I set the "Item Stock" to "100"
+    And I set the "Item Purchase Limit" to "5"
+    And I press the "Create Item" button
+    Then I should see the message "Product added from items!"
+    When I press the "Search" button
+    Then I should see "Item Widget" in the results
+
+Scenario: Add an item product fails due to exceeding purchase limit
+    When I visit the "Home Page"
+    And I set the "User ID" to "5"
+    And I set the "Item ID" to "888"
+    And I set the "Item Description" to "Item Widget"
+    And I set the "Item Price" to "29.99"
+    And I set the "Item Quantity" to "3"
+    And I set the "Item Stock" to "100"
+    And I set the "Item Purchase Limit" to "2"
+    And I press the "Create Item" button
+    Then I should see the message "Cannot exceed purchase limit of 2"

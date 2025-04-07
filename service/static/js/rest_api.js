@@ -6,21 +6,21 @@ $(function () {
 
     // Updates the form with data from the response
     function update_form_data(res) {
-        $("#user_id").val(res.user_id);
-        $("#item_id").val(res.item_id);
-        $("#item_description").val(res.description);
-        $("#item_price").val(res.price);
-        $("#item_quantity").val(res.quantity);
-        $("#item_created_at").val(res.created_at);
+        $("#shopcart_user_id").val(res.user_id);
+        $("#shopcart_item_id").val(res.item_id);
+        $("#shopcart_item_description").val(res.description);
+        $("#shopcart_item_price").val(res.price);
+        $("#shopcart_item_quantity").val(res.quantity);
+        $("#shopcart_item_created_at").val(res.created_at);
     }
 
     /// Clears all form fields
     function clear_form_data() {
-        $("#item_id").val("");
-        $("#item_description").val("");
-        $("#item_price").val("");
-        $("#item_quantity").val("");
-        $("#item_created_at").val("");
+        $("#shopcart_item_id").val("");
+        $("#shopcart_item_description").val("");
+        $("#shopcart_item_price").val("");
+        $("#shopcart_item_quantity").val("");
+        $("#shopcart_item_created_at").val("");
     }
 
     // Updates the flash message area
@@ -60,11 +60,11 @@ $(function () {
     // ****************************************
 
     $("#create-btn").click(function () {
-        let user_id = $("#user_id").val();
-        let item_id = $("#item_id").val();
-        let description = $("#item_description").val();
-        let price = $("#item_price").val();
-        let quantity = $("#item_quantity").val();
+        let user_id = $("#shopcart_user_id").val();
+        let item_id = $("#shopcart_item_id").val();
+        let description = $("#shopcart_item_description").val();
+        let price = $("#shopcart_item_price").val();
+        let quantity = $("#shopcart_item_quantity").val();
 
         let data = {
             "item_id": parseInt(item_id),
@@ -98,14 +98,54 @@ $(function () {
         });
     });
 
+    $("#create_item-btn").click(function () {
+        let user_id = $("#shopcart_user_id").val();
+        let product_id = $("#shopcart_item_id").val();
+        let name = $("#shopcart_item_description").val();
+        let price = $("#shopcart_item_price").val();
+        let quantity = $("#shopcart_item_quantity").val();
+        let stock = $("#shopcart_item_stock").val();
+        let purchase_limit = $("#shopcart_item_purchase_limit").val();
+    
+        let data = {
+            "product_id": parseInt(product_id),
+            "name": name,
+            "price": parseFloat(price),
+            "quantity": parseInt(quantity),
+            "stock": parseInt(stock),
+            "purchase_limit": parseInt(purchase_limit)
+        };
+    
+        $("#flash_message").empty();
+    
+        let ajax = $.ajax({
+            type: "POST",
+            url: `/shopcarts/${user_id}/items`,
+            contentType: "application/json",
+            data: JSON.stringify(data)
+        });
+    
+        ajax.done(function(res){
+            flash_message("Product added from items!");
+            if (res.length > 0) {
+                update_form_data(res[0]);
+            }
+        });
+    
+        ajax.fail(function(res){
+            flash_message(res.responseJSON?.error || "Server error!");
+        });
+    });
+    
+
     // ****************************************
     // Update an Item in Cart
     // ****************************************
 
     $("#update-btn").click(function () {
-        let user_id = $("#user_id").val();
-        let item_id = $("#item_id").val();
-        let quantity = $("#item_quantity").val();
+        let user_id = $("#shopcart_user_id").val();
+        let item_id = $("#shopcart_item_id").val();
+        let quantity = $("#shopcart_item_quantity").val();
 
         let data = {
             "quantity": parseInt(quantity)
@@ -141,7 +181,7 @@ $(function () {
     // ****************************************
 
     $("#retrieve-btn").click(function () {
-        let user_id = $("#user_id").val();
+        let user_id = $("#shopcart_user_id").val();
 
         $("#flash_message").empty();
 
@@ -215,7 +255,7 @@ $(function () {
     // ****************************************
 
     $("#delete-btn").click(function () {
-        let user_id = $("#user_id").val();
+        let user_id = $("#shopcart_user_id").val();
 
         $("#flash_message").empty();
 
@@ -242,7 +282,7 @@ $(function () {
     // ****************************************
 
     $("#clear-btn").click(function () {
-        $("#user_id").val("");
+        $("#shopcart_shopcart_user_id").val("");
         clear_form_data();
         $("#flash_message").empty();
     });
@@ -252,10 +292,10 @@ $(function () {
     // ****************************************
 
     $("#search-btn").click(function () {
-        let user_id = $("#user_id").val();
-        let item_id = $("#item_id").val();
-        let price = $("#item_price").val();
-        let quantity = $("#item_quantity").val();
+        let user_id = $("#shopcart_user_id").val();
+        let item_id = $("#shopcart_item_id").val();
+        let price = $("#shopcart_item_price").val();
+        let quantity = $("#shopcart_item_quantity").val();
 
         let queryString = "";
 

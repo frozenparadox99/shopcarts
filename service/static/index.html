@@ -36,9 +36,9 @@
           <div class="well">
             <div class="form-horizontal">
               <div class="form-group">
-                <label class="control-label col-sm-2" for="user_id">User ID:</label>
+                <label class="control-label col-sm-2" for="shopcart_user_id">User ID:</label>
                 <div class="col-sm-6">
-                  <input type="text" class="form-control" id="user_id" placeholder="Enter User ID">
+                  <input type="text" class="form-control" id="shopcart_user_id" placeholder="Enter User ID">
                 </div>
                 <div class="col-sm-4">
                   <button type="submit" class="btn btn-primary" id="retrieve-btn">Retrieve Cart</button>
@@ -51,44 +51,59 @@
   
               <!-- ITEM ID -->
               <div class="form-group">
-                <label class="control-label col-sm-2" for="item_id">Item ID:</label>
+                <label class="control-label col-sm-2" for="shopcart_item_id">Item ID:</label>
                 <div class="col-sm-10">
-                  <input type="text" class="form-control" id="item_id" placeholder="Enter item ID">
+                  <input type="text" class="form-control" id="shopcart_item_id" placeholder="Enter item ID">
                 </div>
               </div>
   
               <!-- DESCRIPTION -->
               <div class="form-group">
-                <label class="control-label col-sm-2" for="item_description">Description:</label>
+                <label class="control-label col-sm-2" for="shopcart_item_description">Description:</label>
                 <div class="col-sm-10">
-                  <input type="text" class="form-control" id="item_description" placeholder="Enter item description">
+                  <input type="text" class="form-control" id="shopcart_item_description" placeholder="Enter item description">
                 </div>
               </div>
   
               <!-- PRICE -->
               <div class="form-group">
-                <label class="control-label col-sm-2" for="item_price">Price:</label>
+                <label class="control-label col-sm-2" for="shopcart_item_price">Price:</label>
                 <div class="col-sm-10">
-                  <input type="number" step="0.01" class="form-control" id="item_price" placeholder="Enter price">
+                  <input type="number" step="0.01" class="form-control" id="shopcart_item_price" placeholder="Enter price">
                 </div>
               </div>
   
               <!-- QUANTITY -->
               <div class="form-group">
-                <label class="control-label col-sm-2" for="item_quantity">Quantity:</label>
+                <label class="control-label col-sm-2" for="shopcart_item_quantity">Quantity:</label>
                 <div class="col-sm-10">
-                  <input type="number" class="form-control" id="item_quantity" placeholder="Enter quantity">
+                  <input type="number" class="form-control" id="shopcart_item_quantity" placeholder="Enter quantity">
+                </div>
+              </div>
+
+              <!-- STOCK -->
+              <div class="form-group">
+                <label class="control-label col-sm-2" for="shopcart_item_stock">Stock:</label>
+                <div class="col-sm-10">
+                  <input type="number" class="form-control" id="shopcart_item_stock" placeholder="Enter stock">
+                </div>
+              </div>
+
+              <!-- PURCHASE LIMIT -->
+              <div class="form-group">
+                <label class="control-label col-sm-2" for="shopcart_item_purchase_limit">Purchase Limit:</label>
+                <div class="col-sm-10">
+                  <input type="number" class="form-control" id="shopcart_item_purchase_limit" placeholder="Enter purchase limit">
                 </div>
               </div>
   
               <!-- CREATED DATE (READ ONLY) -->
               <div class="form-group">
-                <label class="control-label col-sm-2" for="item_created_at">Created At:</label>
+                <label class="control-label col-sm-2" for="shopcart_item_created_at">Created At:</label>
                 <div class="col-sm-10">
-                  <input type="text" readonly class="form-control" id="item_created_at" placeholder="Created date will appear here">
+                  <input type="text" readonly class="form-control" id="shopcart_item_created_at" placeholder="Created date will appear here">
                 </div>
               </div>
-  
   
               <!-- SUBMIT BUTTONS -->
               <div class="form-group">
@@ -96,6 +111,7 @@
                   <button type="submit" class="btn btn-primary" id="search-btn">Search</button>
                   <button type="submit" class="btn btn-primary" id="clear-btn">Clear</button>
                   <button type="submit" class="btn btn-success" id="create-btn">Add to Cart</button>
+                  <button type="submit" class="btn btn-success" id="create_item-btn">Add to Cart item</button>
                   <button type="submit" class="btn btn-warning" id="update-btn">Update Item</button>
                 </div>
               </div>
