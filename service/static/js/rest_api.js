@@ -30,6 +30,32 @@ $(function () {
     }
 
     // ****************************************
+    // Check API Health Status
+    // ****************************************
+    
+    function check_health() {
+        let ajax = $.ajax({
+            type: "GET",
+            url: "/health",
+            contentType: "application/json",
+            data: ''
+        });
+
+        ajax.done(function(res){
+            $("#health_status").html('<span class="text-success">✓ API Online</span>');
+            console.log("Health check passed: " + JSON.stringify(res));
+        });
+
+        ajax.fail(function(){
+            $("#health_status").html('<span class="text-danger">✗ API Offline</span>');
+            console.log("Health check failed");
+        });
+    }
+
+    // Check health when page loads
+    check_health();
+
+    // ****************************************
     // Create / Add Item to Cart
     // ****************************************
 
