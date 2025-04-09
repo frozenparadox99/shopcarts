@@ -191,3 +191,19 @@ def step_impl(context: Any, element_name: str, text_string: str) -> None:
     )
     element.clear()
     element.send_keys(text_string)
+
+
+@then('the API health status should be "{expected_text}"')
+def step_impl(context, expected_text):
+    element_id = "shopcart_health_status"
+
+    element = context.driver.find_element(By.ID, element_id)
+
+    def text_has_updated(driver):
+        current_text = element.text.strip()
+        return current_text and "Checking" not in current_text
+
+    WebDriverWait(context.driver, context.wait_seconds).until(text_has_updated)
+
+    actual_text = element.text.strip()
+    assert expected_text in actual_text
