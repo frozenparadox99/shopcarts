@@ -460,4 +460,30 @@ $(function () {
             flash_message(res.responseJSON.error || "Server error!");
         });
     });
+
+    // ****************************************
+    // Checkout for Shopcarts
+    // ****************************************
+
+    $("#checkout-btn").click(function () {
+        let user_id = $("#shopcart_user_id").val();
+    
+        $("#flash_message").empty();
+    
+        let ajax = $.ajax({
+            type: "POST",
+            url: `/shopcarts/${user_id}/checkout`,
+            contentType: "application/json",
+            data: "",
+        });
+    
+        ajax.done(function (res) {
+            flash_message(`${res.message} Total: $${res.total_price.toFixed(2)}`);
+        });
+    
+        ajax.fail(function (res) {
+            flash_message(res.responseJSON?.error || "Server error!");
+        });
+    });
+    
 });
