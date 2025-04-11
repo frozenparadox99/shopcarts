@@ -126,7 +126,7 @@ Scenario: Checkout a user’s cart via the UI
     And I set the "User ID" to "1"
     And I press the "Checkout" button
     Then I should see the message "Cart 1 checked out successfully"
-    And the flashed message should be "Total: $69.97"
+    And I should see the message "Total: $69.97"
     When I press the "Clear" button
     And I set the "User ID" to "1"
     And I press the "Search" button

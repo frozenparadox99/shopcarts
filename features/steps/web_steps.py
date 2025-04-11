@@ -207,18 +207,3 @@ def step_impl(context, expected_text):
 
     actual_text = element.text.strip()
     assert expected_text in actual_text
-
-
-@then('the flashed message should be "{expected_text}"')
-def step_impl(context, expected_text):
-    element_id = "flash_message"
-
-    WebDriverWait(context.driver, context.wait_seconds).until(
-        expected_conditions.text_to_be_present_in_element(
-            (By.ID, element_id), expected_text
-        )
-    )
-
-    element = context.driver.find_element(By.ID, element_id)
-    actual_text = element.text.strip()
-    assert expected_text in actual_text
