@@ -244,6 +244,43 @@ $(function () {
     });
 
     // ****************************************
+    // Delete an Item from Cart
+    // ****************************************
+
+    $("#delete_item-btn").click(function () {
+        let user_id = $("#shopcart_user_id").val();
+        let item_id = $("#shopcart_item_id").val();
+
+        if (!user_id) {
+            flash_message("User ID is required to delete an item.");
+            return;
+        }
+
+        if (!item_id) {
+            flash_message("Item ID is required to delete an item.");
+            return;
+        }
+
+        $("#flash_message").empty();
+
+        let ajax = $.ajax({
+            type: "DELETE",
+            url: `/shopcarts/${user_id}/items/${item_id}`,
+            contentType: "application/json",
+            data: ''
+        });
+
+        ajax.done(function(res){
+            clear_form_data();
+            flash_message("Item has been deleted from the cart!");
+        });
+
+        ajax.fail(function(res){
+            flash_message(res.responseJSON?.error || "Server error!");
+        });
+    });
+
+    // ****************************************
     // Retrieve a Shopcart
     // ****************************************
 
