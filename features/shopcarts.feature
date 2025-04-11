@@ -89,3 +89,34 @@ Scenario: List all shopcarts from the UI (using Search Button - equivalent to Li
     And I should see "Basic Tool" in the results
     And I should see "Fancy Accessory" in the results
     And I should see "Standard Supply" in the results
+
+Scenario: Delete a shopcart from the UI
+    When I visit the "Home Page"
+    And I set the "User ID" to "3"
+    And I press the "Delete" button
+    Then I should see the message "Shopcart has been deleted!"
+    When I press the "Retrieve" button
+    Then I should see the message "Shopcart not found for this user."
+
+Scenario: Delete an item from a user's cart via the UI
+    When I visit the "Home Page"
+    And I set the "User ID" to "1"
+    And I set the "Item ID" to "101"
+    And I press the "Delete Item" button
+    Then I should see the message "Item has been deleted from the cart!"
+    When I set the "User ID" to "1"
+    And I press the "Retrieve" button
+    Then I should see "Premium Gadget" in the results
+    And I should not see "Deluxe Widget" in the results
+
+Scenario: Cannot delete an item without providing a User ID
+    When I visit the "Home Page" 
+    And I set the "Item ID" to "101"
+    And I press the "Delete Item" button
+    Then I should see the message "User ID is required to delete an item."
+
+Scenario: Cannot delete an item without providing an Item ID
+    When I visit the "Home Page"
+    And I set the "User ID" to "1"
+    And I press the "Delete Item" button
+    Then I should see the message "Item ID is required to delete an item."
