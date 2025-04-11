@@ -56,6 +56,73 @@ $(function () {
     check_health();
 
     // ****************************************
+    // List All
+    // ****************************************
+
+    $("#list-btn").click(function () {
+        $("#flash_message").empty();
+    
+        let ajax = $.ajax({
+            type: "GET",
+            url: "/shopcarts",
+            contentType: "application/json",
+            data: ""
+        });
+    
+        ajax.done(function(res){
+            $("#search_results").empty();
+            let table = '<table class="table table-striped">';
+            table += '<thead><tr>';
+            table += '<th class="col-md-1">User ID</th>';
+            table += '<th class="col-md-2">Item ID</th>';
+            table += '<th class="col-md-4">Description</th>';
+            table += '<th class="col-md-2">Price</th>';
+            table += '<th class="col-md-1">Quantity</th>';
+            table += '<th class="col-md-2">Created At</th>';
+            table += '</tr></thead><tbody>';
+
+            // Flatten items from all carts
+            let items = [];
+            for (let cart of res) {
+                for (let item of cart.items) {
+                    items.push(item);
+                }
+            }
+
+            let firstItem = null;
+            for(let i = 0; i < items.length; i++) {
+                let item = items[i];
+                table += `<tr id="row_${i}">
+                    <td>${item.user_id}</td>
+                    <td>${item.item_id}</td>
+                    <td>${item.description}</td>
+                    <td>${item.price.toFixed(2)}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.created_at}</td>
+                </tr>`;
+                if (i == 0) {
+                    firstItem = item;
+                }
+            }
+            table += '</tbody></table>';
+            $("#search_results").append(table);
+
+            // Copy the first result to the form
+            if (firstItem) {
+                update_form_data(firstItem);
+                flash_message("All shopcarts listed.");
+            } else {
+                flash_message("No items found matching the search criteria.");
+            }
+        });
+    
+        ajax.fail(function(res){
+            flash_message(res.responseJSON?.error || "Server error!");
+        });
+    });
+    
+
+    // ****************************************
     // Create / Add Item to Cart
     // ****************************************
 

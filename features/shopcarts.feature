@@ -71,3 +71,12 @@ Scenario: Add an item product fails due to exceeding purchase limit
     And I set the "Item Purchase Limit" to "2"
     And I press the "Create Item" button
     Then I should see the message "Cannot exceed purchase limit of 2"
+
+Scenario: List all shopcarts from the UI
+    When I visit the "Home Page"
+    And I press the "List" button
+    Then I should see "Deluxe Widget" in the results
+    And I should see "Premium Gadget" in the results
+    And I should see "Basic Tool" in the results
+    And I should see "Fancy Accessory" in the results
+    And I should see "Standard Supply" in the results
