@@ -120,3 +120,25 @@ Scenario: Cannot delete an item without providing an Item ID
     And I set the "User ID" to "1"
     And I press the "Delete Item" button
     Then I should see the message "Item ID is required to delete an item."
+
+Scenario: Checkout a user’s cart via the UI
+    When I visit the "Home Page"
+    And I set the "User ID" to "1"
+    And I press the "Checkout" button
+    Then I should see the message "Cart 1 checked out successfully"
+    And I should see the message "Total: $69.97"
+    When I press the "Clear" button
+    And I set the "User ID" to "1"
+    And I press the "Search" button
+    Then I should see the message "No items found matching the search criteria."
+
+Scenario: Checkout fails when cart is empty
+    When I visit the "Home Page"
+    And I set the "User ID" to "999"
+    And I press the "Checkout" button
+    Then I should see the message "No cart found for user 999"
+
+Scenario: Checkout fails when cart is empty
+    When I visit the "Home Page"
+    And I press the "Checkout" button
+    Then I should see the message "Not Found"
