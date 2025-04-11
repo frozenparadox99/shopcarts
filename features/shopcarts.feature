@@ -80,3 +80,12 @@ Scenario: List all shopcarts from the UI
     And I should see "Basic Tool" in the results
     And I should see "Fancy Accessory" in the results
     And I should see "Standard Supply" in the results
+
+Scenario: List all shopcarts from the UI (using Search Button - equivalent to List All when no arguments provided)
+    When I visit the "Home Page"
+    And I press the "Search" button
+    Then I should see "Deluxe Widget" in the results
+    And I should see "Premium Gadget" in the results
+    And I should see "Basic Tool" in the results
+    And I should see "Fancy Accessory" in the results
+    And I should see "Standard Supply" in the results
