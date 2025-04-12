@@ -167,6 +167,9 @@ Scenario: Filter shopcarts by price greater than 30
     And I press the "Search" button
     Then I should see "Fancy Accessory" in the results
     But I should not see "Deluxe Widget" in the results
+    And I should not see "Basic Tool" in the results
+    And I should not see "Deluxe Widget" in the results
+    And I should not see "Standard Supply" in the results
 
 Scenario: Filter shopcarts by quantity less than or equal to 2
     When I visit the "Home Page"
@@ -229,8 +232,6 @@ Scenario: Filter shopcarts by created_at range
     And I set the "Created At Range" to "2000-01-01,2300-12-31"
     And I press the "Search" button
     Then I should see "Today Widget" in the results
-
-# ????
 
 Scenario: Filter shopcarts by price and quantity range
     When I visit the "Home Page"
