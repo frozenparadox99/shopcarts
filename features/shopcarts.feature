@@ -142,3 +142,130 @@ Scenario: Checkout fails when cart is empty
     When I visit the "Home Page"
     And I press the "Checkout" button
     Then I should see the message "Not Found"
+
+Scenario: Filter shopcarts by price and quantity range
+    When I visit the "Home Page"
+    And I set the "Price Range" to "10,30"
+    And I set the "Quantity Range" to "1,3"
+    And I press the "Search" button
+    Then I should see "Deluxe Widget" in the results
+    And I should see "Premium Gadget" in the results
+    But I should not see "Basic Tool" in the results
+    And I should not see "Fancy Accessory" in the results
+    And I should not see "Standard Supply" in the results
+
+Scenario: Filter shopcarts by user_id
+    When I visit the "Home Page"
+    And I set the "User ID" to "2"
+    And I press the "Search" button
+    Then I should see "Basic Tool" in the results
+    But I should not see "Deluxe Widget" in the results
+
+Scenario: Filter shopcarts by price greater than 30
+    When I visit the "Home Page"
+    And I set the "Item Price" to "~gt~30"
+    And I press the "Search" button
+    Then I should see "Fancy Accessory" in the results
+    But I should not see "Deluxe Widget" in the results
+
+Scenario: Filter shopcarts by quantity less than or equal to 2
+    When I visit the "Home Page"
+    And I set the "Item Quantity" to "~lte~2"
+    And I press the "Search" button
+    Then I should see "Deluxe Widget" in the results
+    And I should see "Premium Gadget" in the results
+    And I should see "Fancy Accessory" in the results
+    But I should not see "Standard Supply" in the results
+    And I should not see "Basic Tool" in the results
+
+Scenario: Filter shopcarts by user_id and price greater than 20
+    When I visit the "Home Page"
+    And I set the "User ID" to "1"
+    And I set the "Item Price" to "~gt~20"
+    And I press the "Search" button
+    Then I should see "Premium Gadget" in the results
+    But I should not see "Deluxe Widget" in the results
+
+Scenario: Filter shopcarts with min-price and max-price range
+    When I visit the "Home Page"
+    And I set the "Min Price" to "10"
+    And I set the "Max Price" to "30"
+    And I press the "Search" button
+    Then I should see "Deluxe Widget" in the results
+    And I should see "Premium Gadget" in the results
+    And I should see "Standard Supply" in the results
+    But I should not see "Fancy Accessory" in the results
+    And I should not see "Basic Tool" in the results
+
+Scenario: Return error for invalid price_range format
+    When I visit the "Home Page"
+    And I set the "Price Range" to "40"
+    And I press the "Search" button
+    Then I should see the message "Invalid range format for price_range: expected start,end"
+
+Scenario: Return error for using both price and min-price
+    When I visit the "Home Page"
+    And I set the "User ID" to "1"
+    And I set the "Item Price" to "~gte~40"
+    And I set the "Min Price" to "30"
+    And I press the "Search" button
+    Then I should see the message "Cannot use both 'price' or 'price_range' and 'min-price'/'max-price'"
+
+Scenario: Return error for invalid min-price
+    When I visit the "Home Page"
+    And I set the "Min Price" to "cheap"
+    And I press the "Search" button
+    Then I should see the message "Invalid value for price: cheap"
+
+Scenario: Filter shopcarts by created_at range
+    When I visit the "Home Page"
+    And I set the "User ID" to "88"
+    And I set the "Item ID" to "999"
+    And I set the "Item Description" to "Today Widget"
+    And I set the "Item Price" to "19.99"
+    And I set the "Item Quantity" to "1"
+    And I press the "Create" button
+    And I press the "Clear" button
+    And I set the "Created At Range" to "2000-01-01,2300-12-31"
+    And I press the "Search" button
+    Then I should see "Today Widget" in the results
+
+# ????
+
+Scenario: Filter shopcarts by price and quantity range
+    When I visit the "Home Page"
+    And I press the "Search User" button
+    Then I should see the message "User ID is required to search user cart."
+
+Scenario: Filter shopcarts by price and quantity range
+    When I visit the "Home Page"
+    And I set the "User Id" to "3"
+    And I set the "Price Range" to "10,40"
+    And I set the "Quantity Range" to "1,3"
+    And I press the "Search User" button
+    Then I should see "Fancy Accessory" in the results
+    But I should not see "Standard Supply" in the results
+
+Scenario: Filter shopcarts by price greater than 30
+    When I visit the "Home Page"
+    And I set the "User Id" to "1" 
+    And I set the "Item Price" to "~gt~20"
+    And I press the "Search User" button
+    Then I should see "Premium Gadget" in the results
+    But I should not see "Deluxe Widget" in the results
+
+Scenario: Filter shopcarts with min-price and max-price range
+    When I visit the "Home Page"
+    And I set the "User Id" to "1"
+    And I set the "Min Price" to "10"
+    And I set the "Max Price" to "20"
+    And I press the "Search User" button
+    Then I should see "Deluxe Widget" in the results
+    But I should not see "Premium Gadget" in the results
+
+Scenario: Return error for invalid min-price
+    When I visit the "Home Page"
+    And I set the "User Id" to "1"
+    And I set the "Max Price" to "expensive"
+    And I press the "Search User" button
+    Then I should see the message "Invalid value for price: expensive"
