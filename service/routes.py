@@ -23,6 +23,7 @@ and Delete Shopcarts
 
 from flask import jsonify
 from flask import current_app as app
+from flask_restx import Api, Resource, fields, reqparse
 from service.common import status
 
 from service.controllers.get_controller import (
@@ -46,6 +47,20 @@ from service.controllers.put_controller import (
 from service.controllers.delete_controller import (
     delete_shopcart_controller,
     delete_shopcart_item_controller,
+)
+
+######################################################################
+# Configure Swagger before initializing it
+######################################################################
+api = Api(
+    app,
+    version="1.0.0",
+    title="Shopcarts REST API Service",
+    description="This is the Shopcarts REST API Service.",
+    default="shopcarts",
+    default_label="Shopcarts operations",
+    doc="/apidocs",
+    prefix="/api",
 )
 
 
@@ -104,17 +119,113 @@ def health():
     return {"status": "OK"}, status.HTTP_200_OK
 
 
+# Define the models for Swagger documentation
+shopcart_item_model = api.model(
+    "ShopCartItem",
+    {
+        "user_id": fields.Integer(required=True, description="The user ID"),
+        "item_id": fields.Integer(required=True, description="The item ID"),
+        "description": fields.String(
+            required=True, description="Description of the item"
+        ),
+        "quantity": fields.Integer(required=True, description="Quantity of the item"),
+        "price": fields.Float(required=True, description="Price of the item"),
+        "created_at": fields.DateTime(readOnly=True, description="Creation timestamp"),
+        "last_updated": fields.DateTime(
+            readOnly=True, description="Last update timestamp"
+        ),
+    },
+)
+
+shopcart_model = api.model(
+    "ShopCart",
+    {
+        "user_id": fields.Integer(required=True, description="The user ID"),
+        "items": fields.List(
+            fields.Nested(shopcart_item_model), description="Items in the shopcart"
+        ),
+    },
+)
+
+# Define query string arguments for filtering
+shopcart_args = reqparse.RequestParser()
+shopcart_args.add_argument(
+    "user_id", type=str, location="args", help="Filter by user ID"
+)
+shopcart_args.add_argument(
+    "item_id", type=str, location="args", help="Filter by item ID"
+)
+shopcart_args.add_argument(
+    "description", type=str, location="args", help="Filter by description"
+)
+shopcart_args.add_argument(
+    "quantity",
+    type=str,
+    location="args",
+    help="Filter by quantity or use operators like ~gt~, ~lt~",
+)
+shopcart_args.add_argument(
+    "price",
+    type=str,
+    location="args",
+    help="Filter by price or use operators like ~gt~, ~lt~",
+)
+shopcart_args.add_argument(
+    "created_at", type=str, location="args", help="Filter by creation date"
+)
+shopcart_args.add_argument(
+    "last_updated", type=str, location="args", help="Filter by last update date"
+)
+shopcart_args.add_argument(
+    "price_range",
+    type=str,
+    location="args",
+    help="Filter by price range (format: min,max)",
+)
+shopcart_args.add_argument(
+    "quantity_range",
+    type=str,
+    location="args",
+    help="Filter by quantity range (format: min,max)",
+)
+shopcart_args.add_argument(
+    "min-price", type=float, location="args", help="Filter by minimum price"
+)
+shopcart_args.add_argument(
+    "max-price", type=float, location="args", help="Filter by maximum price"
+)
+shopcart_args.add_argument(
+    "min-qty", type=int, location="args", help="Filter by minimum quantity"
+)
+shopcart_args.add_argument(
+    "max-qty", type=int, location="args", help="Filter by maximum quantity"
+)
+
 ######################################################################
 #  R E S T   A P I   E N D P O I N T S
 ######################################################################
 
+
+@api.route("/shopcarts", strict_slashes=False)
+class ShopcartsCollection(Resource):
+    """Handles all interactions with collections of Shopcarts"""
+
+    @api.doc("list_shopcarts")
+    @api.expect(shopcart_args, validate=False)
+    @api.marshal_list_with(shopcart_model)
+    def get(self):
+        """Lists all shopcarts grouped by user"""
+        app.logger.info("Request to list all shopcarts")
+        return get_shopcarts_controller()
+
+
 # GET ROUTES
 
 
-@app.route("/shopcarts", methods=["GET"])
-def list_shopcarts():
-    """List all shopcarts grouped by user"""
-    return get_shopcarts_controller()
+# @app.route("/shopcarts", methods=["GET"])
+# def list_shopcarts():
+#     """List all shopcarts grouped by user"""
+#     return get_shopcarts_controller()
 
 
 @app.route("/shopcarts/<int:user_id>", methods=["GET"])

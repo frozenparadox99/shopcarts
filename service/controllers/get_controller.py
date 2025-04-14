@@ -25,7 +25,7 @@ def get_shopcarts_controller():
             filters = helpers.extract_item_filters(request.args)
             all_items = Shopcart.find_all_with_filter(filters=filters)
         except ValueError as ve:
-            return jsonify({"error": str(ve)}), status.HTTP_400_BAD_REQUEST
+            return {"error": str(ve)}, status.HTTP_400_BAD_REQUEST
 
     # Group items by user_id
     user_items = {}
@@ -38,7 +38,7 @@ def get_shopcarts_controller():
     for user_id, items in user_items.items():
         shopcarts_list.append({"user_id": user_id, "items": items})
 
-    return jsonify(shopcarts_list), status.HTTP_200_OK
+    return shopcarts_list, status.HTTP_200_OK
 
 
 def get_user_shopcart_controller(user_id):

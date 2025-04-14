@@ -92,7 +92,7 @@ class TestShopcartGet(TestShopcartService):
         # Create test data
         shopcarts = self._populate_shopcarts(20)
         # Get the list of all shopcarts
-        resp = self.client.get("/shopcarts")
+        resp = self.client.get("/api/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         # Verify response structure
@@ -132,7 +132,7 @@ class TestShopcartGet(TestShopcartService):
 
     def test_list_empty_shopcarts(self):
         """It should return an empty list when no shopcarts exist"""
-        resp = self.client.get("/shopcarts")
+        resp = self.client.get("/api/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertEqual(data, [])
@@ -141,7 +141,7 @@ class TestShopcartGet(TestShopcartService):
         """It should get the shopcarts"""
         shopcart_user_1 = self._populate_shopcarts(count=3, user_id=1)
         shopcart_user_2 = self._populate_shopcarts(count=1, user_id=2)
-        resp = self.client.get("/shopcarts")
+        resp = self.client.get("/api/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertIsInstance(data, list)
@@ -218,7 +218,7 @@ class TestShopcartGet(TestShopcartService):
     def test_read_empty_user_shopcart(self):
         """It should return an empty list if a user does not have any items"""
         self._populate_shopcarts(count=3, user_id=1)
-        resp = self.client.get("/shopcarts")
+        resp = self.client.get("/api/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertIsInstance(data, list)

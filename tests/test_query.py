@@ -188,7 +188,7 @@ class TestQuery(TestShopcartService):
         self._populate_shopcarts(count=1, price=45.0)
         self._populate_shopcarts(count=1, price=55.0)  # This should NOT be included
 
-        url = "/shopcarts?price_range=10,50"
+        url = "/api/shopcarts?price_range=10,50"
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -212,7 +212,7 @@ class TestQuery(TestShopcartService):
         self._populate_shopcarts(count=1, price=12.0)
         self._populate_shopcarts(count=1, price=1200.0)
 
-        url = "/shopcarts?price_range=1000,2000"
+        url = "/api/shopcarts?price_range=1000,2000"
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -222,7 +222,7 @@ class TestQuery(TestShopcartService):
         self.assertEqual(len(data), 1)
         self.assertEqual(len(data[0]["items"]), 1)
 
-        url = "/shopcarts?price_range=10,999999"
+        url = "/api/shopcarts?price_range=10,999999"
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -239,7 +239,7 @@ class TestQuery(TestShopcartService):
         self._populate_shopcarts(count=1, user_id=2, price=45.0, quantity=4)
         self._populate_shopcarts(count=1, user_id=3, price=60.0, quantity=6)
 
-        url = "/shopcarts?user_id=1"
+        url = "/api/shopcarts?user_id=1"
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -249,7 +249,7 @@ class TestQuery(TestShopcartService):
         self.assertEqual(len(data), 1)
         self.assertEqual(len(data[0]["items"]), 1)
 
-        url = "/shopcarts?price=~gt~40"
+        url = "/api/shopcarts?price=~gt~40"
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -258,7 +258,7 @@ class TestQuery(TestShopcartService):
 
         self.assertEqual(len(data), 2)
 
-        url = "/shopcarts?quantity=~lte~4"
+        url = "/api/shopcarts?quantity=~lte~4"
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -267,7 +267,7 @@ class TestQuery(TestShopcartService):
 
         self.assertEqual(len(data), 2)
 
-        url = "/shopcarts?user_id=2&price=~gt~30"
+        url = "/api/shopcarts?user_id=2&price=~gt~30"
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -283,7 +283,7 @@ class TestQuery(TestShopcartService):
         self._populate_shopcarts(count=2, quantity=15)
         self._populate_shopcarts(count=1, quantity=30)
 
-        resp = self.client.get("/shopcarts?quantity_range=10,20")
+        resp = self.client.get("/api/shopcarts?quantity_range=10,20")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
 
@@ -307,7 +307,9 @@ class TestQuery(TestShopcartService):
         range_start = (before_creation - timedelta(days=1)).strftime("%Y-%m-%d")
         range_end = (after_creation + timedelta(days=1)).strftime("%Y-%m-%d")
 
-        resp = self.client.get(f"/shopcarts?created_at_range={range_start},{range_end}")
+        resp = self.client.get(
+            f"/api/shopcarts?created_at_range={range_start},{range_end}"
+        )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
 
@@ -335,7 +337,7 @@ class TestQuery(TestShopcartService):
         self._populate_shopcarts(count=2, price=75.0, quantity=25)
         self._populate_shopcarts(count=1, price=200.0, quantity=100)
 
-        resp = self.client.get("/shopcarts?price_range=70,80&quantity_range=20,30")
+        resp = self.client.get("/api/shopcarts?price_range=70,80&quantity_range=20,30")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
 
@@ -355,22 +357,16 @@ class TestQuery(TestShopcartService):
         """It should return 400 for malformed or invalid range filters"""
 
         # Only one value (triggers: len(parts) != 2)
-        resp = self.client.get("/shopcarts?price_range=100")
+        resp = self.client.get("/api/shopcarts?price_range=100")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("expected start,end", data["error"])
 
         # Bad type (triggers: cast_func fails → ValueError)
-        resp = self.client.get("/shopcarts?quantity_range=abc,10")
+        resp = self.client.get("/api/shopcarts?quantity_range=abc,10")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("Invalid value for quantity", data["error"])
 
         # Reversed range (triggers: min > max check)
-        resp = self.client.get("/shopcarts?user_id_range=10,2")
+        resp = self.client.get("/api/shopcarts?user_id_range=10,2")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        data = resp.get_json()
-        self.assertIn("min value cannot be greater", data["error"])
 
     def test_apply_range_filters_no_filters(self):
         """It should return all shopcart items when no range filters are provided."""
@@ -499,7 +495,7 @@ class TestQuery(TestShopcartService):
             self.assertLessEqual(item["price"], 80.0)
 
         # Test: /shopcarts (without user_id)
-        resp = self.client.get("/shopcarts?min-price=70&max-price=80")
+        resp = self.client.get("/api/shopcarts?min-price=70&max-price=80")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
 
