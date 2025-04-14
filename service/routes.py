@@ -316,6 +316,12 @@ class ShopcartsResource(Resource):
         app.logger.info("Request to update shopcart for user_id: '%s'", user_id)
         return update_shopcart_controller(user_id)
 
+    @api.doc("delete_shopcart")
+    def delete(self, user_id):
+        """Delete an entire shopcart for a user"""
+        app.logger.info("Request to delete shopcart for user_id: '%s'", user_id)
+        return delete_shopcart_controller(user_id)
+
 
 @api.route("/shopcarts/<int:user_id>/items", strict_slashes=False)
 class ShopcartItemsCollection(Resource):
@@ -394,90 +400,28 @@ class ShopcartItemsResource(Resource):
         app.logger.info("Request to update item %s for user_id: %s", item_id, user_id)
         return update_cart_item_controller(user_id, item_id)
 
-
-# GET ROUTES
-
-
-# @app.route("/shopcarts", methods=["GET"])
-# def list_shopcarts():
-#     """List all shopcarts grouped by user"""
-#     return get_shopcarts_controller()
-
-
-@app.route("/shopcarts/<int:user_id>", methods=["GET"])
-def get_user_shopcart(user_id):
-    """Gets the shopcart for a specific user id"""
-    return get_user_shopcart_controller(user_id)
+    @api.doc("delete_shopcart_item")
+    @api.response(204, "Item deleted")
+    @api.response(404, "Item not found")
+    @api.response(500, "Internal Server Error")
+    def delete(self, user_id, item_id):
+        """Delete a specific item from a user's shopping cart"""
+        app.logger.info(
+            "Request to delete item %s from user_id: %s shopping cart", item_id, user_id
+        )
+        return delete_shopcart_item_controller(user_id, item_id)
 
 
-@app.route("/shopcarts/<int:user_id>/items", methods=["GET"])
-def get_user_shopcart_items(user_id):
-    """Gets all items in a specific user's shopcart"""
-    return get_user_shopcart_items_controller(user_id)
+@api.route("/shopcarts/<int:user_id>/checkout", strict_slashes=False)
+class CheckoutResource(Resource):
+    """Handles checkout operations for a shopcart"""
 
-
-@app.route("/shopcarts/<int:user_id>/items/<int:item_id>", methods=["GET"])
-def get_cart_item(user_id, item_id):
-    """Gets a specific item from a user's shopcart"""
-    return get_cart_item_controller(user_id, item_id)
-
-
-# POST ROUTES
-
-
-# @app.route("/shopcarts/<int:user_id>", methods=["POST"])
-# def add_to_or_create_cart(user_id):
-#     """Add an item to a user's cart or update quantity if it already exists."""
-#     return add_to_or_create_cart_controller(user_id)
-
-
-# @app.route("/shopcarts/<int:user_id>/items", methods=["POST"])
-# def add_product_to_cart(user_id):
-#     """
-#     Add a product to a user's shopping cart or update quantity if it already exists.
-#     Product data (name, price, stock, purchase_limit, etc.) is taken from the request body,
-#     """
-#     return add_product_to_cart_controller(user_id)
-
-
-# PUT ROUTES
-
-
-# @app.route("/shopcarts/<int:user_id>/items/<int:item_id>", methods=["PUT"])
-# def update_cart_item(user_id, item_id):
-#     """Update a specific item in a user's shopping cart."""
-#     return update_cart_item_controller(user_id, item_id)
-
-
-# @app.route("/shopcarts/<int:user_id>", methods=["PUT"])
-# def update_shopcart(user_id):
-#     """Update an existing shopcart."""
-#     return update_shopcart_controller(user_id)
-
-
-# DELETE ROUTES
-
-
-@app.route("/shopcarts/<int:user_id>", methods=["DELETE"])
-def delete_shopcart(user_id):
-    """Delete an entire shopcart for a user"""
-    return delete_shopcart_controller(user_id)
-
-
-@app.route("/shopcarts/<int:user_id>/items/<int:item_id>", methods=["DELETE"])
-def delete_shopcart_item(user_id, item_id):
-    """
-    Delete a specific item from a user's shopping cart
-    This endpoint removes a single item from a shopping cart while preserving the cart
-    and any other items that may be in it
-    """
-    return delete_shopcart_item_controller(user_id, item_id)
-
-
-# ACTION ROUTE
-
-
-@app.route("/shopcarts/<int:user_id>/checkout", methods=["POST"])
-def checkout(user_id):
-    """Finalize a user's cart and proceed with payment."""
-    return checkout_controller(user_id)
+    @api.doc("checkout_shopcart")
+    @api.response(200, "Checkout successful")
+    @api.response(400, "Bad Request")
+    @api.response(404, "Shopcart not found")
+    @api.response(500, "Internal Server Error")
+    def post(self, user_id):
+        """Finalize a user's cart and proceed with payment"""
+        app.logger.info("Request to checkout shopcart for user_id: '%s'", user_id)
+        return checkout_controller(user_id)

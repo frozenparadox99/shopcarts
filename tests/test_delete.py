@@ -44,19 +44,19 @@ class TestShopcartDelete(TestShopcartService):
         self._populate_shopcarts(count=3, user_id=user_id)
 
         # Send delete request
-        response = self.client.delete(f"/shopcarts/{user_id}")
+        response = self.client.delete(f"/api/shopcarts/{user_id}")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(len(response.data), 0)
 
         # Verify the shopcart is deleted by trying to get it
-        get_response = self.client.get(f"/shopcarts/{user_id}")
+        get_response = self.client.get(f"/api/shopcarts/{user_id}")
         self.assertEqual(get_response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_non_existing_shopcart(self):
         """It should return 204 even when deleting a non-existent shopcart"""
         # Try to delete a shopcart for a user that doesn't exist
         non_existent_user_id = 9999
-        response = self.client.delete(f"/shopcarts/{non_existent_user_id}")
+        response = self.client.delete(f"/api/shopcarts/{non_existent_user_id}")
 
         # Should still return 204 No Content
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -73,7 +73,7 @@ class TestShopcartDelete(TestShopcartService):
             "service.models.Shopcart.find_by_user_id",
             side_effect=Exception("Database error"),
         ):
-            response = self.client.delete(f"/shopcarts/{user_id}")
+            response = self.client.delete(f"/api/shopcarts/{user_id}")
 
             # Verify the status code is 500 (Internal Server Error)
             self.assertEqual(
@@ -97,20 +97,22 @@ class TestShopcartDelete(TestShopcartService):
         item_id = shopcarts[0].item_id
 
         # Verify item exists before deletion
-        initial_response = self.client.get(f"/shopcarts/{user_id}/items/{item_id}")
+        initial_response = self.client.get(f"/api/shopcarts/{user_id}/items/{item_id}")
         self.assertEqual(initial_response.status_code, status.HTTP_200_OK)
 
         # Delete the item
-        delete_response = self.client.delete(f"/shopcarts/{user_id}/items/{item_id}")
+        delete_response = self.client.delete(
+            f"/api/shopcarts/{user_id}/items/{item_id}"
+        )
         self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(len(delete_response.data), 0)
 
         # Verify the item was deleted
-        get_response = self.client.get(f"/shopcarts/{user_id}/items/{item_id}")
+        get_response = self.client.get(f"/api/shopcarts/{user_id}/items/{item_id}")
         self.assertEqual(get_response.status_code, status.HTTP_404_NOT_FOUND)
 
         # Verify the cart still exists with remaining items
-        cart_response = self.client.get(f"/shopcarts/{user_id}")
+        cart_response = self.client.get(f"/api/shopcarts/{user_id}")
         self.assertEqual(cart_response.status_code, status.HTTP_200_OK)
         cart_data = cart_response.get_json()
         # Should have 2 items left
@@ -125,7 +127,7 @@ class TestShopcartDelete(TestShopcartService):
         # Try to delete an item that doesn't exist
         non_existent_item_id = 9999
         response = self.client.delete(
-            f"/shopcarts/{user_id}/items/{non_existent_item_id}"
+            f"/api/shopcarts/{user_id}/items/{non_existent_item_id}"
         )
 
         # Should return 404 Not Found
@@ -140,7 +142,7 @@ class TestShopcartDelete(TestShopcartService):
         """It should return 404 when trying to delete an item for a non-existent user's cart"""
         # Try to delete an item for a user that doesn't exist
         non_existent_user_id = 9999
-        response = self.client.delete(f"/shopcarts/{non_existent_user_id}/items/1")
+        response = self.client.delete(f"/api/shopcarts/{non_existent_user_id}/items/1")
 
         # Should return 404 Not Found
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -159,7 +161,7 @@ class TestShopcartDelete(TestShopcartService):
         with patch(
             "service.models.Shopcart.delete", side_effect=Exception("Database error")
         ):
-            response = self.client.delete(f"/shopcarts/{user_id}/items/{item_id}")
+            response = self.client.delete(f"/api/shopcarts/{user_id}/items/{item_id}")
 
             # Verify the status code is 500 (Internal Server Error)
             self.assertEqual(

@@ -2,7 +2,7 @@
 POST Controller logic for Shopcart Service
 """
 
-from flask import request, jsonify
+from flask import request
 from flask import current_app as app
 
 from service.common import status
@@ -102,18 +102,19 @@ def checkout_controller(user_id):
     try:
         total_price = Shopcart.finalize_cart(user_id)
         return (
-            jsonify(
-                {
-                    "message": f"Cart {user_id} checked out successfully",
-                    "total_price": total_price,
-                }
-            ),
-            200,
+            {
+                "message": f"Cart {user_id} checked out successfully",
+                "total_price": total_price,
+            },
+            status.HTTP_200_OK,
         )
 
     except DataValidationError as e:
-        return jsonify({"error": str(e)}), 400
+        return {"error": str(e)}, status.HTTP_400_BAD_REQUEST
 
     except Exception as e:  # pylint: disable=broad-except
         app.logger.error("Checkout error for user %s: %s", user_id, e)
-        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+        return (
+            {"error": f"Internal server error: {str(e)}"},
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

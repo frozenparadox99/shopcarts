@@ -109,7 +109,7 @@ class TestShopcartService(TestCase):
         self._populate_shopcarts(count=2, user_id=user_id)
 
         # Call the checkout endpoint
-        response = self.client.post(f"/shopcarts/{user_id}/checkout")
+        response = self.client.post(f"/api/shopcarts/{user_id}/checkout")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
         self.assertIn("message", data)
@@ -118,7 +118,7 @@ class TestShopcartService(TestCase):
     def test_checkout_empty_cart(self):
         """It should return 400 if the cart is empty."""
         user_id = 2
-        response = self.client.post(f"/shopcarts/{user_id}/checkout")
+        response = self.client.post(f"/api/shopcarts/{user_id}/checkout")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         data = response.get_json()
         self.assertIn("error", data)
@@ -130,11 +130,11 @@ class TestShopcartService(TestCase):
         self._populate_shopcarts(count=1, user_id=user_id)
 
         # First checkout call (should succeed)
-        first_checkout = self.client.post(f"/shopcarts/{user_id}/checkout")
+        first_checkout = self.client.post(f"/api/shopcarts/{user_id}/checkout")
         self.assertEqual(first_checkout.status_code, status.HTTP_200_OK)
 
         # Second checkout call
-        second_checkout = self.client.post(f"/shopcarts/{user_id}/checkout")
+        second_checkout = self.client.post(f"/api/shopcarts/{user_id}/checkout")
         self.assertEqual(second_checkout.status_code, status.HTTP_400_BAD_REQUEST)
         data = second_checkout.get_json()
         self.assertIn("error", data)
