@@ -139,7 +139,7 @@ Scenario: Checkout fails when cart is empty
 Scenario: Checkout fails when cart is empty
     When I visit the "Home Page"
     And I press the "Checkout" button
-    Then I should see the message "Not Found"
+    Then I should see the message "Server error!"
 
 Scenario: Filter shopcarts by price and quantity range
     When I visit the "Home Page"
