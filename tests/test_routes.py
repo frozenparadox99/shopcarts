@@ -92,7 +92,9 @@ class TestShopcartService(TestCase):
                 "price": float(shopcart.price),
                 "quantity": shopcart.quantity,
             }
-            response = self.client.post(f"/shopcarts/{shopcart.user_id}", json=payload)
+            response = self.client.post(
+                f"/api/shopcarts/{shopcart.user_id}", json=payload
+            )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             shopcarts.append(shopcart)
         return shopcarts

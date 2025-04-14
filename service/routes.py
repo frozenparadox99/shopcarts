@@ -255,6 +255,34 @@ class ShopcartsResource(Resource):
         app.logger.info("Request to get shopcart for user_id: '%s'", user_id)
         return get_user_shopcart_controller(user_id)
 
+    @api.doc("add_to_cart")
+    @api.expect(
+        api.model(
+            "AddToCart",
+            {
+                "item_id": fields.Integer(required=True, description="The item ID"),
+                "description": fields.String(
+                    required=True, description="Description of the item"
+                ),
+                "price": fields.Float(required=True, description="Price of the item"),
+                "quantity": fields.Integer(
+                    default=1, description="Quantity of the item"
+                ),
+            },
+        )
+    )
+    @api.marshal_list_with(shopcart_item_model, code=201)
+    def post(self, user_id):
+        """Add an item to a user's cart or update quantity if it already exists."""
+        app.logger.info("Request to add item to cart for user_id: '%s'", user_id)
+        cart, status_code = add_to_or_create_cart_controller(user_id)
+        if status_code == status.HTTP_201_CREATED:
+            location_url = api.url_for(
+                ShopcartsResource, user_id=user_id, _external=True
+            )
+            return cart, status_code, {"Location": location_url}
+        return cart, status_code
+
 
 @api.route("/shopcarts/<int:user_id>/items", strict_slashes=False)
 class ShopcartItemsCollection(Resource):
@@ -266,6 +294,43 @@ class ShopcartItemsCollection(Resource):
         """Gets all items in a specific user's shopcart"""
         app.logger.info("Request to get all items for user_id: '%s'", user_id)
         return get_user_shopcart_items_controller(user_id)
+
+    @api.doc("add_product_to_cart")
+    @api.expect(
+        api.model(
+            "AddProductToCart",
+            {
+                "product_id": fields.Integer(
+                    required=True, description="The product ID"
+                ),
+                "name": fields.String(required=True, description="Name of the product"),
+                "price": fields.Float(
+                    required=True, description="Price of the product"
+                ),
+                "quantity": fields.Integer(
+                    default=1, description="Quantity of the product"
+                ),
+                "stock": fields.Integer(required=True, description="Available stock"),
+                "purchase_limit": fields.Integer(
+                    required=False, description="Purchase limit per customer"
+                ),
+            },
+        )
+    )
+    @api.marshal_list_with(shopcart_item_model, code=201)
+    def post(self, user_id):
+        """Add a product to a user's shopping cart or update quantity if it already exists."""
+        app.logger.info("Request to add product to cart for user_id: '%s'", user_id)
+        cart, status_code = add_product_to_cart_controller(user_id)
+
+        if status_code == status.HTTP_201_CREATED:
+            # Generate the Location header
+            location_url = api.url_for(
+                ShopcartsResource, user_id=user_id, _external=True
+            )
+            return cart, status_code, {"Location": location_url}
+
+        return cart, status_code
 
 
 @api.route("/shopcarts/<int:user_id>/items/<int:item_id>", strict_slashes=False)
