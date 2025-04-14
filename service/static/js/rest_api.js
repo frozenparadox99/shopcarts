@@ -73,7 +73,7 @@ $(function () {
     
         let ajax = $.ajax({
             type: "GET",
-            url: "/shopcarts",
+            url: "/api/shopcarts",
             contentType: "application/json",
             data: ""
         });
@@ -153,7 +153,7 @@ $(function () {
         
         let ajax = $.ajax({
             type: "POST",
-            url: `/shopcarts/${user_id}`,
+            url: `/api/shopcarts/${user_id}`,
             contentType: "application/json",
             data: JSON.stringify(data),
         });
@@ -196,7 +196,7 @@ $(function () {
     
         let ajax = $.ajax({
             type: "POST",
-            url: `/shopcarts/${user_id}/items`,
+            url: `/api/shopcarts/${user_id}/items`,
             contentType: "application/json",
             data: JSON.stringify(data)
         });
@@ -231,7 +231,7 @@ $(function () {
 
         let ajax = $.ajax({
             type: "PUT",
-            url: `/shopcarts/${user_id}/items/${item_id}`,
+            url: `/api/shopcarts/${user_id}/items/${item_id}`,
             contentType: "application/json",
             data: JSON.stringify(data)
         });
@@ -274,7 +274,7 @@ $(function () {
 
         let ajax = $.ajax({
             type: "DELETE",
-            url: `/shopcarts/${user_id}/items/${item_id}`,
+            url: `/api/shopcarts/${user_id}/items/${item_id}`,
             contentType: "application/json",
             data: ''
         });
@@ -300,7 +300,7 @@ $(function () {
 
         let ajax = $.ajax({
             type: "GET",
-            url: `/shopcarts/${user_id}`,
+            url: `/api/shopcarts/${user_id}`,
             contentType: "application/json",
             data: ''
         });
@@ -374,7 +374,7 @@ $(function () {
 
         let ajax = $.ajax({
             type: "DELETE",
-            url: `/shopcarts/${user_id}`,
+            url: `/api/shopcarts/${user_id}`,
             contentType: "application/json",
             data: '',
         });
@@ -490,7 +490,7 @@ $(function () {
         $("#flash_message").empty();
 
         // Default search URL if no queryString
-        let searchUrl = "/shopcarts";
+        let searchUrl = "/api/shopcarts";
         if (queryString.length > 0) {
             searchUrl += "?" + queryString;
         }
@@ -641,7 +641,7 @@ $(function () {
         $("#flash_message").empty();
 
         // Default search URL if no queryString
-        let searchUrl = `/shopcarts/${user_id}`;
+        let searchUrl = `/api/shopcarts/${user_id}`;
         if (queryString.length > 0) {
             searchUrl += "?" + queryString;
         }
@@ -716,7 +716,7 @@ $(function () {
     
         let ajax = $.ajax({
             type: "POST",
-            url: `/shopcarts/${user_id}/checkout`,
+            url: `/api/shopcarts/${user_id}/checkout`,
             contentType: "application/json",
             data: "",
         });
