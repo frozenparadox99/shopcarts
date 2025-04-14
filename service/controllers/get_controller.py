@@ -94,13 +94,13 @@ def get_user_shopcart_items_controller(user_id):
             del data["created_at"]
             del data["last_updated"]
             items_list[0]["items"].append(data)
-        return jsonify(items_list), status.HTTP_200_OK
+        return items_list, status.HTTP_200_OK
     except HTTPException as e:
         raise e
     except Exception as e:  # pylint: disable=broad-except
         app.logger.error(f"Error reading items for user_id: '{user_id}'")
         return (
-            jsonify({"error": f"Internal server error: {str(e)}"}),
+            {"error": f"Internal server error: {str(e)}"},
             status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

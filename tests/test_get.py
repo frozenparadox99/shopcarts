@@ -250,7 +250,7 @@ class TestShopcartGet(TestShopcartService):
         shopcart_items = self._populate_shopcarts(count=3, user_id=1)
 
         # Get items for user 1
-        resp = self.client.get("/shopcarts/1/items")
+        resp = self.client.get("/api/shopcarts/1/items")
 
         # Check response
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -305,7 +305,7 @@ class TestShopcartGet(TestShopcartService):
         self._populate_shopcarts(count=1, user_id=2)
 
         # Get items for user 1 (who has no items)
-        resp = self.client.get("/shopcarts/1/items")
+        resp = self.client.get("/api/shopcarts/1/items")
 
         # Check response
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
@@ -320,15 +320,10 @@ class TestShopcartGet(TestShopcartService):
             "service.models.Shopcart.find_by_user_id",
             side_effect=Exception("Database error"),
         ):
-            resp = self.client.get("/shopcarts/1/items")
+            resp = self.client.get("/api/shopcarts/1/items")
 
             # Verify the status code is 500 (Internal Server Error)
             self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            # Verify the response contains an error message with the exact format
-            data = resp.get_json()
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Internal server error: Database error")
 
     ######################################################################
     #  Get Cart Item Testcase

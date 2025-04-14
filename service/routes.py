@@ -120,6 +120,30 @@ def health():
 
 
 # Define the models for Swagger documentation
+
+shopcart_item_without_timestamps_model = api.model(
+    "ShopcartItemWithoutTimestamps",
+    {
+        "user_id": fields.Integer(required=True, description="The user ID"),
+        "item_id": fields.Integer(required=True, description="The item ID"),
+        "description": fields.String(required=True, description="The item description"),
+        "quantity": fields.Integer(required=True, description="The item quantity"),
+        "price": fields.Float(required=True, description="The item price"),
+    },
+)
+
+shopcart_items_without_timestamps_model = api.model(
+    "ShopcartItemsWithoutTimestamps",
+    {
+        "user_id": fields.Integer(required=True, description="The user ID"),
+        "items": fields.List(
+            fields.Nested(shopcart_item_without_timestamps_model),
+            required=True,
+            description="List of items in the cart",
+        ),
+    },
+)
+
 shopcart_item_model = api.model(
     "ShopCartItem",
     {
@@ -230,6 +254,18 @@ class ShopcartsResource(Resource):
         """Gets the shopcart for a specific user id"""
         app.logger.info("Request to get shopcart for user_id: '%s'", user_id)
         return get_user_shopcart_controller(user_id)
+
+
+@api.route("/shopcarts/<int:user_id>/items", strict_slashes=False)
+class ShopcartItemsCollection(Resource):
+    """Handles all interactions with the items in a specific user's shopcart"""
+
+    @api.doc("get_shopcart_items")
+    @api.marshal_with(shopcart_items_without_timestamps_model)
+    def get(self, user_id):
+        """Gets all items in a specific user's shopcart"""
+        app.logger.info("Request to get all items for user_id: '%s'", user_id)
+        return get_user_shopcart_items_controller(user_id)
 
 
 # GET ROUTES
