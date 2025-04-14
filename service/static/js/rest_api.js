@@ -116,6 +116,21 @@ $(function () {
             table += '</tbody></table>';
             $("#search_results").append(table);
 
+            // Make table rows clickable to populate the form with the selected item
+            $("#search_results tbody").off("click", "tr");  // Remove any existing handlers
+            $("#search_results tbody").on("click", "tr", function() {
+                let index = $(this).attr('id').split('_')[1];
+                let item = items[parseInt(index)];
+                update_form_data(item);
+                
+                // Highlight the selected row
+                $("#search_results tbody tr").removeClass("info");
+                $(this).addClass("info");
+                
+                // Flash a message about the selected item
+                flash_message(`Selected item ${item.item_id}: ${item.description}`);
+            });
+
             // Copy the first result to the form
             if (firstItem) {
                 update_form_data(firstItem);
@@ -344,6 +359,21 @@ $(function () {
             table += '</tbody></table>';
             $("#search_results").append(table);
 
+            // Make table rows clickable to populate the form with the selected item
+            $("#search_results tbody").off("click", "tr");  // Remove any existing handlers
+            $("#search_results tbody").on("click", "tr", function() {
+                let index = $(this).attr('id').split('_')[1];
+                let item = items[parseInt(index)];
+                update_form_data(item);
+                
+                // Highlight the selected row
+                $("#search_results tbody tr").removeClass("info");
+                $(this).addClass("info");
+                
+                // Flash a message about the selected item
+                flash_message(`Selected item ${item.item_id}: ${item.description}`);
+            });
+
             // Copy the first result to the form
             if (firstItem) {
                 update_form_data(firstItem);
@@ -540,6 +570,21 @@ $(function () {
             table += '</tbody></table>';
             $("#search_results").append(table);
 
+            // Make table rows clickable to populate the form with the selected item
+            $("#search_results tbody").off("click", "tr");  // Remove any existing handlers
+            $("#search_results tbody").on("click", "tr", function() {
+                let index = $(this).attr('id').split('_')[1];
+                let item = items[parseInt(index)];
+                update_form_data(item);
+                
+                // Highlight the selected row
+                $("#search_results tbody tr").removeClass("info");
+                $(this).addClass("info");
+                
+                // Flash a message about the selected item
+                flash_message(`Selected item ${item.item_id}: ${item.description}`);
+            });
+
             // Copy the first result to the form
             if (firstItem) {
                 update_form_data(firstItem);
@@ -690,6 +735,21 @@ $(function () {
             }
             table += '</tbody></table>';
             $("#search_results").append(table);
+
+            // Make table rows clickable to populate the form with the selected item
+            $("#search_results tbody").off("click", "tr");  // Remove any existing handlers
+            $("#search_results tbody").on("click", "tr", function() {
+                let index = $(this).attr('id').split('_')[1];
+                let item = items[parseInt(index)];
+                update_form_data(item);
+                
+                // Highlight the selected row
+                $("#search_results tbody tr").removeClass("info");
+                $(this).addClass("info");
+                
+                // Flash a message about the selected item
+                flash_message(`Selected item ${item.item_id}: ${item.description}`);
+            });
 
             // Copy the first result to the form
             if (firstItem) {
