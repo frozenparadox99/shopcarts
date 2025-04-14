@@ -39,7 +39,7 @@ def step_impl(context):
     """Delete all Shopcarts and load new ones"""
 
     # Get a list of all shopcarts
-    rest_endpoint = f"{context.base_url}/shopcarts"
+    rest_endpoint = f"{context.base_url}/api/shopcarts"
     context.resp = requests.get(rest_endpoint, timeout=WAIT_TIMEOUT)
     expect(context.resp.status_code).equal_to(HTTP_200_OK)
 
@@ -51,7 +51,7 @@ def step_impl(context):
             if user_id not in user_ids:
                 user_ids.add(user_id)
                 context.resp = requests.delete(
-                    f"{context.base_url}/shopcarts/{user_id}", timeout=WAIT_TIMEOUT
+                    f"{context.base_url}/api/shopcarts/{user_id}", timeout=WAIT_TIMEOUT
                 )
                 expect(context.resp.status_code).equal_to(HTTP_204_NO_CONTENT)
 
@@ -64,7 +64,7 @@ def step_impl(context):
             "price": float(row["price"]),
             "quantity": int(row["quantity"]),
         }
-        shopcart_endpoint = f"{context.base_url}/shopcarts/{user_id}"
+        shopcart_endpoint = f"{context.base_url}/api/shopcarts/{user_id}"
         context.resp = requests.post(
             shopcart_endpoint, json=payload, timeout=WAIT_TIMEOUT
         )
