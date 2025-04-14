@@ -268,6 +268,18 @@ class ShopcartItemsCollection(Resource):
         return get_user_shopcart_items_controller(user_id)
 
 
+@api.route("/shopcarts/<int:user_id>/items/<int:item_id>", strict_slashes=False)
+class ShopcartItemsResource(Resource):
+    """Handles all interactions with a specific item in a shopcart"""
+
+    @api.doc("get_cart_item")
+    @api.marshal_with(shopcart_item_model)
+    def get(self, user_id, item_id):
+        """Gets a specific item from a user's shopcart"""
+        app.logger.info("Request to get item %s for user_id: %s", item_id, user_id)
+        return get_cart_item_controller(user_id, item_id)
+
+
 # GET ROUTES
 
 

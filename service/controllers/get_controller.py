@@ -121,14 +121,12 @@ def get_cart_item_controller(user_id, item_id):
         cart_item = Shopcart.find(user_id, item_id)
         if not cart_item:
             return (
-                jsonify(
-                    {"error": f"Item {item_id} not found in user {user_id}'s cart"}
-                ),
+                {"error": f"Item {item_id} not found in user {user_id}'s cart"},
                 status.HTTP_404_NOT_FOUND,
             )
 
         # Return the serialized item
-        return jsonify(cart_item.serialize()), status.HTTP_200_OK
+        return cart_item.serialize(), status.HTTP_200_OK
 
     except HTTPException as e:
         raise e

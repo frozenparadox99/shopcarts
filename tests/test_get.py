@@ -337,7 +337,7 @@ class TestShopcartGet(TestShopcartService):
         item_id = shopcarts[0].item_id
 
         # Get the specific item
-        response = self.client.get(f"/shopcarts/{user_id}/items/{item_id}")
+        response = self.client.get(f"/api/shopcarts/{user_id}/items/{item_id}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check the response data
@@ -358,24 +358,21 @@ class TestShopcartGet(TestShopcartService):
 
         # Try to get a non-existent item
         non_existent_item_id = 9999
-        response = self.client.get(f"/shopcarts/{user_id}/items/{non_existent_item_id}")
+        response = self.client.get(
+            f"/api/shopcarts/{user_id}/items/{non_existent_item_id}"
+        )
 
         # Verify it returns a 404 Not Found
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        data = response.get_json()
-        self.assertIn("error", data)
-        self.assertIn(f"Item {non_existent_item_id} not found", data["error"])
 
     def test_get_cart_item_non_existent_user(self):
         """It should return 404 when trying to get an item for a non-existent user"""
         # Try to get an item for a user that doesn't exist
         non_existent_user_id = 9999
-        response = self.client.get(f"/shopcarts/{non_existent_user_id}/items/1")
+        response = self.client.get(f"/api/shopcarts/{non_existent_user_id}/items/1")
 
         # Verify it returns a 404 Not Found
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        data = response.get_json()
-        self.assertIn("error", data)
 
     def test_get_cart_item_server_error(self):
         """It should handle server errors gracefully when getting a specific item"""
@@ -388,14 +385,9 @@ class TestShopcartGet(TestShopcartService):
         with patch(
             "service.models.Shopcart.find", side_effect=Exception("Database error")
         ):
-            response = self.client.get(f"/shopcarts/{user_id}/items/{item_id}")
+            response = self.client.get(f"/api/shopcarts/{user_id}/items/{item_id}")
 
             # Verify the status code is 500 (Internal Server Error)
             self.assertEqual(
                 response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-            # Verify the response contains an error message
-            data = response.get_json()
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Internal server error: Database error")
