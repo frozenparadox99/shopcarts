@@ -53,7 +53,7 @@ def get_user_shopcart_controller(user_id):
                 filters["user_id"] = {"operator": "eq", "value": str(user_id)}
                 user_items = Shopcart.find_all_with_filter(filters=filters)
             except ValueError as ve:
-                return jsonify({"error": str(ve)}), status.HTTP_400_BAD_REQUEST
+                return {"error": str(ve)}, status.HTTP_400_BAD_REQUEST
         else:
             user_items = Shopcart.find_by_user_id(user_id=user_id)
 
@@ -65,13 +65,13 @@ def get_user_shopcart_controller(user_id):
         user_list = [{"user_id": user_id, "items": []}]
         for item in user_items:
             user_list[0]["items"].append(item.serialize())
-        return jsonify(user_list), status.HTTP_200_OK
+        return user_list, status.HTTP_200_OK
     except HTTPException as e:
         raise e
     except Exception as e:  # pylint: disable=broad-except
         app.logger.error(f"Error reading shopcart for user_id: '{user_id}'")
         return (
-            jsonify({"error": f"Internal server error: {str(e)}"}),
+            {"error": f"Internal server error: {str(e)}"},
             status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

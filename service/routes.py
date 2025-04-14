@@ -219,6 +219,19 @@ class ShopcartsCollection(Resource):
         return get_shopcarts_controller()
 
 
+@api.route("/shopcarts/<int:user_id>", strict_slashes=False)
+class ShopcartsResource(Resource):
+    """Handles all interactions with a single Shopcart resource"""
+
+    @api.doc("get_shopcart")
+    @api.expect(shopcart_args, validate=False)
+    @api.marshal_with(shopcart_model)
+    def get(self, user_id):
+        """Gets the shopcart for a specific user id"""
+        app.logger.info("Request to get shopcart for user_id: '%s'", user_id)
+        return get_user_shopcart_controller(user_id)
+
+
 # GET ROUTES
 
 
