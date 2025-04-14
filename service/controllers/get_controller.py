@@ -3,7 +3,7 @@ GET Controller logic for Shopcart Service
 """
 
 from werkzeug.exceptions import HTTPException
-from flask import request, jsonify, abort
+from flask import request, abort
 from flask import current_app as app
 from service.models import Shopcart
 from service.common import status, helpers
@@ -133,6 +133,6 @@ def get_cart_item_controller(user_id, item_id):
     except Exception as e:  # pylint: disable=broad-except
         app.logger.error(f"Error retrieving item {item_id} for user_id: '{user_id}'")
         return (
-            jsonify({"error": f"Internal server error: {str(e)}"}),
+            {"error": f"Internal server error: {str(e)}"},
             status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

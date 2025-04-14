@@ -283,6 +283,39 @@ class ShopcartsResource(Resource):
             return cart, status_code, {"Location": location_url}
         return cart, status_code
 
+    @api.doc("update_shopcart")
+    @api.expect(
+        api.model(
+            "UpdateShopcart",
+            {
+                "items": fields.List(
+                    fields.Nested(
+                        api.model(
+                            "ShopCartItemUpdate",
+                            {
+                                "item_id": fields.Integer(
+                                    required=True,
+                                    description="ID of the item to update",
+                                ),
+                                "quantity": fields.Integer(
+                                    required=True,
+                                    description="New quantity for the item",
+                                ),
+                            },
+                        )
+                    ),
+                    required=True,
+                    description="List of items to update in the cart",
+                )
+            },
+        )
+    )
+    @api.marshal_list_with(shopcart_item_model)
+    def put(self, user_id):
+        """Update an existing shopcart"""
+        app.logger.info("Request to update shopcart for user_id: '%s'", user_id)
+        return update_shopcart_controller(user_id)
+
 
 @api.route("/shopcarts/<int:user_id>/items", strict_slashes=False)
 class ShopcartItemsCollection(Resource):
@@ -344,6 +377,23 @@ class ShopcartItemsResource(Resource):
         app.logger.info("Request to get item %s for user_id: %s", item_id, user_id)
         return get_cart_item_controller(user_id, item_id)
 
+    @api.doc("update_cart_item")
+    @api.expect(
+        api.model(
+            "UpdateCartItem",
+            {
+                "quantity": fields.Integer(
+                    required=True, description="Updated quantity of the item"
+                )
+            },
+        )
+    )
+    @api.marshal_with(shopcart_item_model)
+    def put(self, user_id, item_id):
+        """Update a specific item in a user's shopping cart"""
+        app.logger.info("Request to update item %s for user_id: %s", item_id, user_id)
+        return update_cart_item_controller(user_id, item_id)
+
 
 # GET ROUTES
 
@@ -375,34 +425,34 @@ def get_cart_item(user_id, item_id):
 # POST ROUTES
 
 
-@app.route("/shopcarts/<int:user_id>", methods=["POST"])
-def add_to_or_create_cart(user_id):
-    """Add an item to a user's cart or update quantity if it already exists."""
-    return add_to_or_create_cart_controller(user_id)
+# @app.route("/shopcarts/<int:user_id>", methods=["POST"])
+# def add_to_or_create_cart(user_id):
+#     """Add an item to a user's cart or update quantity if it already exists."""
+#     return add_to_or_create_cart_controller(user_id)
 
 
-@app.route("/shopcarts/<int:user_id>/items", methods=["POST"])
-def add_product_to_cart(user_id):
-    """
-    Add a product to a user's shopping cart or update quantity if it already exists.
-    Product data (name, price, stock, purchase_limit, etc.) is taken from the request body,
-    """
-    return add_product_to_cart_controller(user_id)
+# @app.route("/shopcarts/<int:user_id>/items", methods=["POST"])
+# def add_product_to_cart(user_id):
+#     """
+#     Add a product to a user's shopping cart or update quantity if it already exists.
+#     Product data (name, price, stock, purchase_limit, etc.) is taken from the request body,
+#     """
+#     return add_product_to_cart_controller(user_id)
 
 
 # PUT ROUTES
 
 
-@app.route("/shopcarts/<int:user_id>/items/<int:item_id>", methods=["PUT"])
-def update_cart_item(user_id, item_id):
-    """Update a specific item in a user's shopping cart."""
-    return update_cart_item_controller(user_id, item_id)
+# @app.route("/shopcarts/<int:user_id>/items/<int:item_id>", methods=["PUT"])
+# def update_cart_item(user_id, item_id):
+#     """Update a specific item in a user's shopping cart."""
+#     return update_cart_item_controller(user_id, item_id)
 
 
-@app.route("/shopcarts/<int:user_id>", methods=["PUT"])
-def update_shopcart(user_id):
-    """Update an existing shopcart."""
-    return update_shopcart_controller(user_id)
+# @app.route("/shopcarts/<int:user_id>", methods=["PUT"])
+# def update_shopcart(user_id):
+#     """Update an existing shopcart."""
+#     return update_shopcart_controller(user_id)
 
 
 # DELETE ROUTES

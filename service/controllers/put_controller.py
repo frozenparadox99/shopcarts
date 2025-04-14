@@ -2,7 +2,7 @@
 PUT Controller logic for Shopcart Service
 """
 
-from flask import request, jsonify
+from flask import request
 from flask import current_app as app
 from service.common import status
 from service.models import Shopcart
@@ -51,28 +51,28 @@ def update_shopcart_controller(user_id):
             status_code = status.HTTP_400_BAD_REQUEST
 
     # Return the appropriate response
-    return jsonify(response_body), status_code, response_headers
+    return response_body, status_code, response_headers
 
 
 def update_cart_item_controller(user_id, item_id):
     """Update a specific item in a user's shopping cart."""
     data = request.get_json()
     if not data:
-        return jsonify({"error": "Missing JSON payload"}), status.HTTP_400_BAD_REQUEST
+        return {"error": "Missing JSON payload"}, status.HTTP_400_BAD_REQUEST
 
     quantity = int(data.get("quantity"))
 
     cart_item = Shopcart.find(user_id, item_id)
     if not cart_item:
         return (
-            jsonify({"error": f"Item {item_id} not found in user {user_id}'s cart"}),
+            {"error": f"Item {item_id} not found cart"},
             status.HTTP_404_NOT_FOUND,
         )
 
     if quantity == 0:
         cart_item.delete()
         return (
-            jsonify({"message": f"Item {item_id} removed from cart"}),
+            {"message": f"Item {item_id} removed from cart"},
             status.HTTP_200_OK,
         )
 
@@ -81,5 +81,5 @@ def update_cart_item_controller(user_id, item_id):
         cart_item.update()
     except ValueError as e:
         response_body = {"error": str(e)}
-        return jsonify(response_body), status.HTTP_400_BAD_REQUEST
-    return jsonify(cart_item.serialize()), status.HTTP_200_OK
+        return response_body, status.HTTP_400_BAD_REQUEST
+    return cart_item.serialize(), status.HTTP_200_OK
