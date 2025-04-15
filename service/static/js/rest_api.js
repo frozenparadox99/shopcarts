@@ -806,7 +806,7 @@ $(function () {
 
         let ajax = $.ajax({
             type: "GET",
-            url: `/shopcarts/${user_id}/items`,
+            url: `/api/shopcarts/${user_id}/items`,
             contentType: "application/json",
             data: ''
         });
@@ -901,7 +901,7 @@ $(function () {
 
         let ajax = $.ajax({
             type: "GET",
-            url: `/shopcarts/${user_id}/items/${item_id}`,
+            url: `/api/shopcarts/${user_id}/items/${item_id}`,
             contentType: "application/json",
             data: ''
         });
