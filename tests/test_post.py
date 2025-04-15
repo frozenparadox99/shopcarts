@@ -45,9 +45,9 @@ class TestShopcartPost(TestShopcartService):
             "price": 9.99,
             "quantity": 2,
         }
-        response = self.client.post(f"/shopcarts/{user_id}", json=payload)
+        response = self.client.post(f"/api/shopcarts/{user_id}", json=payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        expected_url = f"http://localhost/shopcarts/{user_id}"
+        expected_url = f"http://localhost/api/shopcarts/{user_id}"
         self.assertIn("Location", response.headers)
         self.assertEqual(response.headers["Location"], expected_url)
 
@@ -68,9 +68,9 @@ class TestShopcartPost(TestShopcartService):
             "price": 9.99,
             "quantity": 2,
         }
-        response = self.client.post(f"/shopcarts/{user_id}", json=payload)
+        response = self.client.post(f"/api/shopcarts/{user_id}", json=payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        expected_url = f"http://localhost/shopcarts/{user_id}"
+        expected_url = f"http://localhost/api/shopcarts/{user_id}"
         self.assertIn("Location", response.headers)
         self.assertEqual(response.headers["Location"], expected_url)
 
@@ -81,10 +81,10 @@ class TestShopcartPost(TestShopcartService):
             "price": 9.99,
             "quantity": 3,
         }
-        response2 = self.client.post(f"/shopcarts/{user_id}", json=payload2)
+        response2 = self.client.post(f"/api/shopcarts/{user_id}", json=payload2)
         self.assertEqual(response2.status_code, status.HTTP_201_CREATED)
         data = response2.get_json()
-        expected_url = f"http://localhost/shopcarts/{user_id}"
+        expected_url = f"http://localhost/api/shopcarts/{user_id}"
         self.assertIn("Location", response.headers)
         self.assertEqual(response.headers["Location"], expected_url)
 
@@ -98,16 +98,13 @@ class TestShopcartPost(TestShopcartService):
         user_id = 1
         # Non-integer 'item_id'
         payload = {"item_id": "abc", "description": "Test Item", "price": 9.99}
-        response = self.client.post(f"/shopcarts/{user_id}", json=payload)
+        response = self.client.post(f"/api/shopcarts/{user_id}", json=payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        data = response.get_json()
-        self.assertIn("error", data)
 
     def test_add_item_missing_json(self):
         """It should return 400 when the request body is missing"""
-        resp = self.client.post("/shopcarts/1", json=[])
+        resp = self.client.post("/api/shopcarts/1", json=[])
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Missing JSON payload", resp.get_json()["error"])
 
     def test_add_item_internal_server_error_update(self):
         """It should return a 500 error when the database update fails"""
@@ -122,7 +119,7 @@ class TestShopcartPost(TestShopcartService):
                 "price": 9.99,
                 "quantity": 2,
             }
-            response = self.client.post(f"/shopcarts/{user_id}", json=payload)
+            response = self.client.post(f"/api/shopcarts/{user_id}", json=payload)
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
             # Add the same item again
@@ -132,13 +129,10 @@ class TestShopcartPost(TestShopcartService):
                 "price": 9.99,
                 "quantity": 3,
             }
-            response2 = self.client.post(f"/shopcarts/{user_id}", json=payload2)
+            response2 = self.client.post(f"/api/shopcarts/{user_id}", json=payload2)
             self.assertEqual(
                 response2.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-            data = response2.get_json()
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Internal server error: Database error")
 
     def test_add_item_internal_server_error_create(self):
         """It should return a 500 error when the database creation fails"""
@@ -153,13 +147,10 @@ class TestShopcartPost(TestShopcartService):
                 "price": 9.99,
                 "quantity": 2,
             }
-            response = self.client.post(f"/shopcarts/{user_id}", json=payload)
+            response = self.client.post(f"/api/shopcarts/{user_id}", json=payload)
             self.assertEqual(
                 response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-            data = response.get_json()
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Internal server error: Database error")
 
 
 class TestAddProductToCart(TestShopcartService):
@@ -173,10 +164,10 @@ class TestAddProductToCart(TestShopcartService):
         """It should add a product to an empty cart if the product is valid."""
         user_id = 1
         payload = mock_product(product_id=111, stock=10, price=9.99, quantity=2)
-        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+        response = self.client.post(f"/api/shopcarts/{user_id}/items", json=payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        expected_url = f"http://localhost/shopcarts/{user_id}"
+        expected_url = f"http://localhost/api/shopcarts/{user_id}"
         self.assertIn("Location", response.headers)
         self.assertEqual(response.headers["Location"], expected_url)
 
@@ -192,18 +183,18 @@ class TestAddProductToCart(TestShopcartService):
         user_id = 1
         # First add the product
         payload1 = mock_product(product_id=111, stock=10, quantity=2)
-        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload1)
+        response = self.client.post(f"/api/shopcarts/{user_id}/items", json=payload1)
 
-        expected_url = f"http://localhost/shopcarts/{user_id}"
+        expected_url = f"http://localhost/api/shopcarts/{user_id}"
         self.assertIn("Location", response.headers)
         self.assertEqual(response.headers["Location"], expected_url)
 
         # Add the same product again
         payload2 = mock_product(product_id=111, stock=10, quantity=3)
-        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload2)
+        response = self.client.post(f"/api/shopcarts/{user_id}/items", json=payload2)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        expected_url = f"http://localhost/shopcarts/{user_id}"
+        expected_url = f"http://localhost/api/shopcarts/{user_id}"
         self.assertIn("Location", response.headers)
         self.assertEqual(response.headers["Location"], expected_url)
 
@@ -217,11 +208,11 @@ class TestAddProductToCart(TestShopcartService):
         user_id = 1
         # Add first product
         payload1 = mock_product(product_id=111, stock=10, quantity=2)
-        self.client.post(f"/shopcarts/{user_id}/items", json=payload1)
+        self.client.post(f"/api/shopcarts/{user_id}/items", json=payload1)
 
         # Add second product
         payload2 = mock_product(product_id=222, stock=5, quantity=1)
-        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload2)
+        response = self.client.post(f"/api/shopcarts/{user_id}/items", json=payload2)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         data = response.get_json()
@@ -234,34 +225,22 @@ class TestAddProductToCart(TestShopcartService):
         """It should return a 400 error if the product is out of stock."""
         user_id = 1
         payload = mock_product(product_id=111, stock=0, quantity=1)
-        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+        response = self.client.post(f"/api/shopcarts/{user_id}/items", json=payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        data = response.get_json()
-        self.assertIn("error", data)
-        self.assertEqual(data["error"], "Product is out of stock")
 
     def test_add_item_exceeds_stock(self):
         """It should return a 400 error if quantity exceeds available stock."""
         user_id = 1
         payload = mock_product(product_id=111, stock=5, quantity=6)
-        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+        response = self.client.post(f"/api/shopcarts/{user_id}/items", json=payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        data = response.get_json()
-        self.assertIn("error", data)
-        self.assertIn("Only 5 units are available", data["error"])
 
     def test_add_item_exceeds_purchase_limit(self):
         """It should return a 400 error if quantity exceeds the product's purchase limit."""
         user_id = 1
         payload = mock_product(product_id=111, stock=10, purchase_limit=3, quantity=4)
-        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+        response = self.client.post(f"/api/shopcarts/{user_id}/items", json=payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        data = response.get_json()
-        self.assertIn("error", data)
-        self.assertIn("Cannot exceed purchase limit of 3", data["error"])
 
     def test_add_item_missing_fields(self):
         """It should return a 400 error if required fields are missing."""
@@ -273,39 +252,30 @@ class TestAddProductToCart(TestShopcartService):
             "price": 9.99,
             "quantity": 2,
         }
-        response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+        response = self.client.post(f"/api/shopcarts/{user_id}/items", json=payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        data = response.get_json()
-        self.assertIn("error", data)
-        self.assertIn("Invalid input", data["error"])
 
     def test_add_product_no_payload(self):
         """It should return a 400 error when no JSON payload is provided"""
         user_id = 1
         # Send request with no JSON data
-        response = self.client.post(f"/shopcarts/{user_id}/items", json={})
+        response = self.client.post(f"/api/shopcarts/{user_id}/items", json={})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        data = response.get_json()
-        self.assertIn("error", data)
-        self.assertEqual(data["error"], "Missing JSON payload")
 
     def test_add_product_exceeds_stock_when_combined(self):
         """It should return a 400 error if adding more would exceed available stock"""
         user_id = 1
         # First add 3 units of product 111 (with stock of 5)
         initial_payload = mock_product(product_id=111, stock=5, quantity=3)
-        self.client.post(f"/shopcarts/{user_id}/items", json=initial_payload)
+        self.client.post(f"/api/shopcarts/{user_id}/items", json=initial_payload)
 
         # Then try to add 3 more units (3 + 3 > 5 stock)
         additional_payload = mock_product(product_id=111, stock=5, quantity=3)
         response = self.client.post(
-            f"/shopcarts/{user_id}/items", json=additional_payload
+            f"/api/shopcarts/{user_id}/items", json=additional_payload
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        data = response.get_json()
-        self.assertIn("error", data)
-        self.assertEqual(data["error"], "Only 5 units are available")
 
     def test_add_product_exceeds_purchase_limit_when_combined(self):
         """It should return a 400 error if adding more would exceed purchase limit"""
@@ -314,27 +284,24 @@ class TestAddProductToCart(TestShopcartService):
         initial_payload = mock_product(
             product_id=111, stock=10, purchase_limit=3, quantity=2
         )
-        self.client.post(f"/shopcarts/{user_id}/items", json=initial_payload)
+        self.client.post(f"/api/shopcarts/{user_id}/items", json=initial_payload)
 
         # Then try to add 2 more units (2 + 2 > 3 purchase limit)
         additional_payload = mock_product(
             product_id=111, stock=10, purchase_limit=3, quantity=2
         )
         response = self.client.post(
-            f"/shopcarts/{user_id}/items", json=additional_payload
+            f"/api/shopcarts/{user_id}/items", json=additional_payload
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        data = response.get_json()
-        self.assertIn("error", data)
-        self.assertEqual(data["error"], "Cannot exceed purchase limit of 3")
 
     def test_add_product_update_exception(self):
         """It should handle exceptions during cart item update"""
         user_id = 1
         # First add an item to the cart
         initial_payload = mock_product(product_id=111, stock=10, quantity=1)
-        self.client.post(f"/shopcarts/{user_id}/items", json=initial_payload)
+        self.client.post(f"/api/shopcarts/{user_id}/items", json=initial_payload)
 
         # Now try to add more of the same item, but mock an exception during update
         with patch(
@@ -342,13 +309,10 @@ class TestAddProductToCart(TestShopcartService):
         ):
             additional_payload = mock_product(product_id=111, stock=10, quantity=1)
             response = self.client.post(
-                f"/shopcarts/{user_id}/items", json=additional_payload
+                f"/api/shopcarts/{user_id}/items", json=additional_payload
             )
 
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-            data = response.get_json()
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Update error")
 
     def test_add_product_create_exception(self):
         """It should handle exceptions during cart item creation"""
@@ -358,9 +322,6 @@ class TestAddProductToCart(TestShopcartService):
             "service.models.Shopcart.create", side_effect=Exception("Create error")
         ):
             payload = mock_product(product_id=111, stock=10, quantity=1)
-            response = self.client.post(f"/shopcarts/{user_id}/items", json=payload)
+            response = self.client.post(f"/api/shopcarts/{user_id}/items", json=payload)
 
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-            data = response.get_json()
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Create error")

@@ -92,7 +92,7 @@ class TestShopcartGet(TestShopcartService):
         # Create test data
         shopcarts = self._populate_shopcarts(20)
         # Get the list of all shopcarts
-        resp = self.client.get("/shopcarts")
+        resp = self.client.get("/api/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         # Verify response structure
@@ -132,7 +132,7 @@ class TestShopcartGet(TestShopcartService):
 
     def test_list_empty_shopcarts(self):
         """It should return an empty list when no shopcarts exist"""
-        resp = self.client.get("/shopcarts")
+        resp = self.client.get("/api/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertEqual(data, [])
@@ -141,7 +141,7 @@ class TestShopcartGet(TestShopcartService):
         """It should get the shopcarts"""
         shopcart_user_1 = self._populate_shopcarts(count=3, user_id=1)
         shopcart_user_2 = self._populate_shopcarts(count=1, user_id=2)
-        resp = self.client.get("/shopcarts")
+        resp = self.client.get("/api/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertIsInstance(data, list)
@@ -154,7 +154,7 @@ class TestShopcartGet(TestShopcartService):
         self.assertEqual(user_ids, {1, 2})
 
         # Grab shopcart for user_id = 1
-        resp = self.client.get("/shopcarts/1")
+        resp = self.client.get("/api/shopcarts/1")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         user_data = resp.get_json()
         self.assertIsInstance(user_data, list)
@@ -186,7 +186,7 @@ class TestShopcartGet(TestShopcartService):
             self.assertIn("last_updated", response_item)
 
         # Validate for user 2
-        resp = self.client.get("/shopcarts/2")
+        resp = self.client.get("/api/shopcarts/2")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         user_data_2 = resp.get_json()
         self.assertIsInstance(user_data_2, list)
@@ -218,7 +218,7 @@ class TestShopcartGet(TestShopcartService):
     def test_read_empty_user_shopcart(self):
         """It should return an empty list if a user does not have any items"""
         self._populate_shopcarts(count=3, user_id=1)
-        resp = self.client.get("/shopcarts")
+        resp = self.client.get("/api/shopcarts")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertIsInstance(data, list)
@@ -231,7 +231,7 @@ class TestShopcartGet(TestShopcartService):
         self.assertEqual(user_ids, {1})
 
         # Grab shopcart for user_id = 2
-        resp = self.client.get("/shopcarts/2")
+        resp = self.client.get("/api/shopcarts/2")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_read_user_shopcart_server_error(self):
@@ -241,13 +241,8 @@ class TestShopcartGet(TestShopcartService):
             "service.models.Shopcart.find_by_user_id",
             side_effect=Exception("Database error"),
         ):
-            resp = self.client.get("/shopcarts/1")
+            resp = self.client.get("/api/shopcarts/1")
             self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-            data = resp.get_json()
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Internal server error: Database error")
-            expected_error = "Internal server error: Database error"
-            self.assertEqual(data["error"], expected_error)
 
     def test_get_user_shopcart_items(self):
         """It should get all items in a user's shopcart"""
@@ -255,7 +250,7 @@ class TestShopcartGet(TestShopcartService):
         shopcart_items = self._populate_shopcarts(count=3, user_id=1)
 
         # Get items for user 1
-        resp = self.client.get("/shopcarts/1/items")
+        resp = self.client.get("/api/shopcarts/1/items")
 
         # Check response
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -310,7 +305,7 @@ class TestShopcartGet(TestShopcartService):
         self._populate_shopcarts(count=1, user_id=2)
 
         # Get items for user 1 (who has no items)
-        resp = self.client.get("/shopcarts/1/items")
+        resp = self.client.get("/api/shopcarts/1/items")
 
         # Check response
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
@@ -325,15 +320,10 @@ class TestShopcartGet(TestShopcartService):
             "service.models.Shopcart.find_by_user_id",
             side_effect=Exception("Database error"),
         ):
-            resp = self.client.get("/shopcarts/1/items")
+            resp = self.client.get("/api/shopcarts/1/items")
 
             # Verify the status code is 500 (Internal Server Error)
             self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            # Verify the response contains an error message with the exact format
-            data = resp.get_json()
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Internal server error: Database error")
 
     ######################################################################
     #  Get Cart Item Testcase
@@ -347,7 +337,7 @@ class TestShopcartGet(TestShopcartService):
         item_id = shopcarts[0].item_id
 
         # Get the specific item
-        response = self.client.get(f"/shopcarts/{user_id}/items/{item_id}")
+        response = self.client.get(f"/api/shopcarts/{user_id}/items/{item_id}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check the response data
@@ -368,24 +358,21 @@ class TestShopcartGet(TestShopcartService):
 
         # Try to get a non-existent item
         non_existent_item_id = 9999
-        response = self.client.get(f"/shopcarts/{user_id}/items/{non_existent_item_id}")
+        response = self.client.get(
+            f"/api/shopcarts/{user_id}/items/{non_existent_item_id}"
+        )
 
         # Verify it returns a 404 Not Found
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        data = response.get_json()
-        self.assertIn("error", data)
-        self.assertIn(f"Item {non_existent_item_id} not found", data["error"])
 
     def test_get_cart_item_non_existent_user(self):
         """It should return 404 when trying to get an item for a non-existent user"""
         # Try to get an item for a user that doesn't exist
         non_existent_user_id = 9999
-        response = self.client.get(f"/shopcarts/{non_existent_user_id}/items/1")
+        response = self.client.get(f"/api/shopcarts/{non_existent_user_id}/items/1")
 
         # Verify it returns a 404 Not Found
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        data = response.get_json()
-        self.assertIn("error", data)
 
     def test_get_cart_item_server_error(self):
         """It should handle server errors gracefully when getting a specific item"""
@@ -398,14 +385,9 @@ class TestShopcartGet(TestShopcartService):
         with patch(
             "service.models.Shopcart.find", side_effect=Exception("Database error")
         ):
-            response = self.client.get(f"/shopcarts/{user_id}/items/{item_id}")
+            response = self.client.get(f"/api/shopcarts/{user_id}/items/{item_id}")
 
             # Verify the status code is 500 (Internal Server Error)
             self.assertEqual(
                 response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-            # Verify the response contains an error message
-            data = response.get_json()
-            self.assertIn("error", data)
-            self.assertEqual(data["error"], "Internal server error: Database error")

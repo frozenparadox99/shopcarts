@@ -2,7 +2,6 @@
 DELETE Controller logic for Shopcart Service
 """
 
-from flask import jsonify
 from flask import current_app as app
 from service.models import Shopcart
 from service.common import status
@@ -31,7 +30,7 @@ def delete_shopcart_controller(user_id):
             "Error deleting shopcart for user_id: %s - %s", user_id, str(e)
         )
         return (
-            jsonify({"error": f"Internal server error: {str(e)}"}),
+            {"error": f"Internal server error: {str(e)}"},
             status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -49,11 +48,9 @@ def delete_shopcart_item_controller(user_id, item_id):
         # Check if the item exists in the cart
         if not cart_item:
             return (
-                jsonify(
-                    {
-                        "error": f"Item with id {item_id} was not found in user {user_id}'s cart"
-                    }
-                ),
+                {
+                    "error": f"Item with id {item_id} was not found in user {user_id}'s cart"
+                },
                 status.HTTP_404_NOT_FOUND,
             )
 
@@ -71,6 +68,6 @@ def delete_shopcart_item_controller(user_id, item_id):
             f"Error deleting item {item_id} from user {user_id}'s cart: {str(e)}"
         )
         return (
-            jsonify({"error": f"Internal server error: {str(e)}"}),
+            {"error": f"Internal server error: {str(e)}"},
             status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
