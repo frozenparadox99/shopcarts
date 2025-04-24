@@ -234,3 +234,60 @@ spec:
           echo Applying manifests in $(inputs.params.manifest-dir) directory
           oc apply -f $(inputs.params.manifest-dir)
           echo -----------------------------------
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: behave
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Testing
+    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/tags: python, behave, selenium, bdd
+    tekton.dev/displayName: "Behave BDD Tests"
+    tekton.dev/platforms: "linux/amd64"
+spec:
+  workspaces:
+    - name: source
+      description: Source code including feature files and steps
+  description: >
+    This task runs BDD tests using Behave and Selenium. It installs dependencies from Pipenv and validates the live deployment.
+  params:
+    - name: BASE_URL
+      description: The URL of the live application under test
+      type: string
+    - name: WAIT_SECONDS
+      description: The number of seconds to wait for a response
+      type: string
+      default: "60"
+    - name: DRIVER
+      description: The Selenium web driver to use (chrome or firefox)
+      type: string
+      default: "chrome"
+  steps:
+    - name: run-behave
+      image: rofrano/pipeline-selenium
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: BASE_URL
+          value: $(params.BASE_URL)
+        - name: WAIT_SECONDS
+          value: $(params.WAIT_SECONDS)
+        - name: DRIVER
+          value: $(params.DRIVER)
+      script: |
+        #!/bin/bash
+        set -e
+        echo "***** Installing dependencies with Pipenv *****"
+        if [ -e "Pipfile" ]; then
+          python -m pip install --upgrade pip pipenv
+          pipenv install --system --dev
+        else
+          echo "Pipfile not found. Cannot install dependencies."
+          exit 1
+        fi
+
+        echo "***** Running behave tests against $BASE_URL *****"
+        behave
