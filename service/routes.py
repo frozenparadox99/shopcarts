@@ -240,7 +240,10 @@ class ShopcartsCollection(Resource):
     def get(self):
         """Lists all shopcarts grouped by user"""
         app.logger.info("Request to list all shopcarts")
-        return get_shopcarts_controller()
+        shopcarts, code = get_shopcarts_controller()
+        if code != status.HTTP_200_OK:
+            abort(code, shopcarts)
+        return shopcarts, code
 
 
 @api.route("/shopcarts/<int:user_id>", strict_slashes=False)
@@ -256,7 +259,10 @@ class ShopcartsResource(Resource):
     def get(self, user_id):
         """Gets the shopcart for a specific user id"""
         app.logger.info("Request to get shopcart for user_id: '%s'", user_id)
-        return get_user_shopcart_controller(user_id)
+        shopcart, code = get_user_shopcart_controller(user_id)
+        if code != status.HTTP_200_OK:
+            abort(code, shopcart)
+        return shopcart, code
 
     @api.doc("add_to_cart")
     @api.expect(
@@ -282,11 +288,14 @@ class ShopcartsResource(Resource):
         """Add an item to a user's cart or update quantity if it already exists."""
         app.logger.info("Request to add item to cart for user_id: '%s'", user_id)
         cart, status_code = add_to_or_create_cart_controller(user_id)
+        if status_code != status.HTTP_201_CREATED:
+            abort(status_code, cart)
         if status_code == status.HTTP_201_CREATED:
             location_url = api.url_for(
                 ShopcartsResource, user_id=user_id, _external=True
             )
             return cart, status_code, {"Location": location_url}
+
         return cart, status_code
 
     @api.doc("update_shopcart")
@@ -323,7 +332,10 @@ class ShopcartsResource(Resource):
     def put(self, user_id):
         """Update an existing shopcart"""
         app.logger.info("Request to update shopcart for user_id: '%s'", user_id)
-        return update_shopcart_controller(user_id)
+        shopcart, code, headers = update_shopcart_controller(user_id)
+        if code != status.HTTP_200_OK:
+            abort(code, shopcart)
+        return shopcart, code, headers
 
     @api.doc("delete_shopcart")
     def delete(self, user_id):
@@ -344,7 +356,10 @@ class ShopcartItemsCollection(Resource):
     def get(self, user_id):
         """Gets all items in a specific user's shopcart"""
         app.logger.info("Request to get all items for user_id: '%s'", user_id)
-        return get_user_shopcart_items_controller(user_id)
+        shopcart_items, code = get_user_shopcart_items_controller(user_id)
+        if code != status.HTTP_200_OK:
+            abort(code, shopcart_items)
+        return shopcart_items, code
 
     @api.doc("add_product_to_cart")
     @api.expect(
@@ -377,6 +392,9 @@ class ShopcartItemsCollection(Resource):
         app.logger.info("Request to add product to cart for user_id: '%s'", user_id)
         cart, status_code = add_product_to_cart_controller(user_id)
 
+        if status_code != status.HTTP_201_CREATED:
+            abort(status_code, cart)
+
         if status_code == status.HTTP_201_CREATED:
             # Generate the Location header
             location_url = api.url_for(
@@ -399,7 +417,10 @@ class ShopcartItemsResource(Resource):
     def get(self, user_id, item_id):
         """Gets a specific item from a user's shopcart"""
         app.logger.info("Request to get item %s for user_id: %s", item_id, user_id)
-        return get_cart_item_controller(user_id, item_id)
+        cart_item, code = get_cart_item_controller(user_id, item_id)
+        if code != status.HTTP_200_OK:
+            abort(code, cart_item)
+        return cart_item, code
 
     @api.doc("update_cart_item")
     @api.expect(
@@ -419,7 +440,10 @@ class ShopcartItemsResource(Resource):
     def put(self, user_id, item_id):
         """Update a specific item in a user's shopping cart"""
         app.logger.info("Request to update item %s for user_id: %s", item_id, user_id)
-        return update_cart_item_controller(user_id, item_id)
+        cart_item, code = update_cart_item_controller(user_id, item_id)
+        if code != status.HTTP_200_OK:
+            abort(code, cart_item)
+        return cart_item, code
 
     @api.doc("delete_shopcart_item")
     @api.response(204, "Item deleted")
@@ -446,3 +470,14 @@ class CheckoutResource(Resource):
         """Finalize a user's cart and proceed with payment"""
         app.logger.info("Request to checkout shopcart for user_id: '%s'", user_id)
         return checkout_controller(user_id)
+
+
+######################################################################
+#  U T I L I T Y   F U N C T I O N S
+######################################################################
+
+
+def abort(error_code: int, message: str):
+    """Logs errors before aborting"""
+    app.logger.error(message)
+    api.abort(error_code, message)

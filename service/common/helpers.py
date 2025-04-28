@@ -2,7 +2,6 @@
 Helper functions for services
 """
 
-from flask import jsonify
 from service.common import status
 from service.models import Shopcart
 
@@ -31,20 +30,14 @@ def validate_request_data(data):
 def validate_stock_and_limits(quantity, stock, purchase_limit):
     """Check stock availability and purchase limits."""
     if stock is not None and stock < 1:
-        return (
-            jsonify({"error": "Product is out of stock"}),
-            status.HTTP_400_BAD_REQUEST,
-        )
+        return "Product is out of stock", status.HTTP_400_BAD_REQUEST
 
     if stock is not None and quantity > stock:
-        return (
-            jsonify({"error": f"Only {stock} units are available"}),
-            status.HTTP_400_BAD_REQUEST,
-        )
+        return f"Only {stock} units are available", status.HTTP_400_BAD_REQUEST
 
     if purchase_limit is not None and quantity > purchase_limit:
         return (
-            jsonify({"error": f"Cannot exceed purchase limit of {purchase_limit}"}),
+            f"Cannot exceed purchase limit of {purchase_limit}",
             status.HTTP_400_BAD_REQUEST,
         )
 
