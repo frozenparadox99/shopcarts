@@ -53,7 +53,7 @@ def add_to_or_create_cart_controller(user_id):
             new_item.create()
         except Exception as e:  # pylint: disable=broad-except
             return (
-                {"error": f"Internal server error: {str(e)}"},
+                str(e),
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
