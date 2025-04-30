@@ -3,7 +3,7 @@ GET Controller logic for Shopcart Service
 """
 
 from werkzeug.exceptions import HTTPException
-from flask import request, abort
+from flask import request
 from flask import current_app as app
 from service.models import Shopcart
 from service.common import status, helpers
@@ -25,7 +25,7 @@ def get_shopcarts_controller():
             filters = helpers.extract_item_filters(request.args)
             all_items = Shopcart.find_all_with_filter(filters=filters)
         except ValueError as ve:
-            return {"error": str(ve)}, status.HTTP_400_BAD_REQUEST
+            return str(ve), status.HTTP_400_BAD_REQUEST
 
     # Group items by user_id
     user_items = {}
@@ -53,14 +53,12 @@ def get_user_shopcart_controller(user_id):
                 filters["user_id"] = {"operator": "eq", "value": str(user_id)}
                 user_items = Shopcart.find_all_with_filter(filters=filters)
             except ValueError as ve:
-                return {"error": str(ve)}, status.HTTP_400_BAD_REQUEST
+                return str(ve), status.HTTP_400_BAD_REQUEST
         else:
             user_items = Shopcart.find_by_user_id(user_id=user_id)
 
         if not user_items:
-            return abort(
-                status.HTTP_404_NOT_FOUND, f"User with id '{user_id}' was not found."
-            )
+            return f"User with id '{user_id}' was not found.", status.HTTP_404_NOT_FOUND
 
         user_list = [{"user_id": user_id, "items": []}]
         for item in user_items:
@@ -84,9 +82,7 @@ def get_user_shopcart_items_controller(user_id):
         user_items = Shopcart.find_by_user_id(user_id=user_id)
 
         if not user_items:
-            return abort(
-                status.HTTP_404_NOT_FOUND, f"User with id '{user_id}' was not found."
-            )
+            return f"User with id '{user_id}' was not found.", status.HTTP_404_NOT_FOUND
         # Just return the serialized items directly as a list
         items_list = [{"user_id": user_id, "items": []}]
         for item in user_items:
@@ -113,15 +109,13 @@ def get_cart_item_controller(user_id, item_id):
         # First check if the user exists by trying to get any items for this user
         user_items = Shopcart.find_by_user_id(user_id=user_id)
         if not user_items:
-            return abort(
-                status.HTTP_404_NOT_FOUND, f"User with id '{user_id}' was not found."
-            )
+            return f"User with id '{user_id}' was not found.", status.HTTP_404_NOT_FOUND
 
         # Now try to find the specific item
         cart_item = Shopcart.find(user_id, item_id)
         if not cart_item:
             return (
-                {"error": f"Item {item_id} not found in user {user_id}'s cart"},
+                f"Item {item_id} not found in user {user_id}'s cart",
                 status.HTTP_404_NOT_FOUND,
             )
 

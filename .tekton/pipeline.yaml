@@ -19,6 +19,11 @@ spec:
       description: The name of the image to build
       name: IMAGE_NAME
       type: string
+    - name: BASE_URL
+      description: Deployed service base_url
+      default: 'https://shopcarts-moshops-dev.apps.rm3.7wse.p1.openshiftapps.com/'
+      type: string
+
   tasks:
     - name: git-clone
       params:
@@ -142,5 +147,22 @@ spec:
       workspaces:
         - name: source
           workspace: pipeline-workspace
+    - name: behave
+      params:
+        - name: BASE_URL
+          value: $(params.BASE_URL)
+        - name: WAIT_SECONDS
+          value: '60'
+        - name: DRIVER
+          value: chrome
+      runAfter:
+        - deploy-image
+      taskRef:
+        kind: Task
+        name: behave
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+
   workspaces:
     - name: pipeline-workspace

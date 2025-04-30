@@ -141,7 +141,7 @@ $(function () {
         });
     
         ajax.fail(function(res){
-            flash_message(res.responseJSON?.error || "Server error!");
+            flash_message(res.responseJSON?.message || "Server error!");
         });
     });
     
@@ -185,7 +185,7 @@ $(function () {
         });
 
         ajax.fail(function(res){
-            flash_message(res.responseJSON.error || "Server error!");
+            flash_message(res.responseJSON.message || "Server error!");
         });
     });
 
@@ -224,7 +224,7 @@ $(function () {
         });
     
         ajax.fail(function(res){
-            flash_message(res.responseJSON?.error || "Server error!");
+            flash_message(res.responseJSON?.message || "Server error!");
         });
     });
     
@@ -272,7 +272,7 @@ $(function () {
         });
 
         ajax.fail(function(res){
-            flash_message(res.responseJSON.error || "Server error!");
+            flash_message(res.responseJSON.message || "Server error!");
         });
     });
 
@@ -397,7 +397,7 @@ $(function () {
             if (res.status == 404) {
                 flash_message("Shopcart not found for this user.");
             } else {
-                flash_message(res.responseJSON.error || "Server error!");
+                flash_message(res.responseJSON.message || "Server error!");
             }
         });
     });
@@ -604,7 +604,7 @@ $(function () {
         });
 
         ajax.fail(function(res){
-            flash_message(res.responseJSON.error || "Server error!");
+            flash_message(res.responseJSON.message || "Server error!");
         });
     });
 
@@ -770,7 +770,7 @@ $(function () {
         });
 
         ajax.fail(function(res){
-            flash_message(res.responseJSON.error || "Server error!");
+            flash_message(res.responseJSON.message || "Server error!");
         });
     });
 
@@ -883,7 +883,7 @@ $(function () {
             if (res.status == 404) {
                 flash_message("No items found for this user.");
             } else {
-                flash_message(res.responseJSON?.error || "Server error!");
+                flash_message(res.responseJSON?.message || "Server error!");
             }
         });
     });
@@ -922,13 +922,13 @@ $(function () {
 
         ajax.fail(function(res){
             if (res.status == 404) {
-                if (res.responseJSON?.error?.includes("not found")) {
+                if (res.responseJSON?.message?.includes("not found")) {
                     flash_message(`Item ${item_id} not found in user ${user_id}'s cart.`);
                 } else {
                     flash_message("No cart found for this user.");
                 }
             } else {
-                flash_message(res.responseJSON?.error || "Server error!");
+                flash_message(res.responseJSON?.message || "Server error!");
             }
         });
     });
