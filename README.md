@@ -144,13 +144,13 @@ make cluster
 
 Build and tag
 ```
-docker build -t shopcarts:1.0 .
-docker tag shopcarts:1.0 cluster-registry:6000/shopcarts:1.0
+docker build -t shopcarts:latest .
+docker tag shopcarts:latest cluster-registry:6000/shopcarts:latest
 
 ## If the docker push does not work add the following command
 sudo bash -c "echo '127.0.0.1    cluster-registry' >> /etc/hosts"
 
-docker push cluster-registry:6000/shopcarts:1.0
+docker push cluster-registry:6000/shopcarts:latest
 ```
 
 Create namespace
